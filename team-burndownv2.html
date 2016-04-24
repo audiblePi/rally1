@@ -556,6 +556,7 @@ function processStoryPoints(t){
     var storiesProcessed = 0;
     var count = 0;
     var errors = 0;
+    var maxPoints = 0;
 
     //only need unique story id's
     for (i = 0; i < t.length ; i++){
@@ -580,7 +581,7 @@ function processStoryPoints(t){
                     planActual: data.HierarchicalRequirement.PlanEstimate,
                     acceptedDate: data.HierarchicalRequirement.AcceptedDate
                 }
-
+                maxPoints += data.HierarchicalRequirement.PlanEstimate;
                 storiesProcessed++;
 
                 //only keep stories that have been accepted
@@ -589,14 +590,18 @@ function processStoryPoints(t){
 
                 //we're done - sort then process
                 if ((teamStories.length-errors) === storiesProcessed){
-                    //console.log(teamStoryData);
                     teamStoryData.sort(function(x, y) {
                         return convertIsoDate(x.acceptedDate) - convertIsoDate(y.acceptedDate);
                     });
 
                     var totalPoints = countStoryPoints(teamStoryData);
                     var totalHours = countTaskHours(t);
-                    var pointsToHours = (totalHours/totalPoints).toFixed(2);
+                    var pointsToHours = (totalHours/maxPoints).toFixed(2);
+
+                    // console.log("maxPoints: "+ maxPoints);
+                    // console.log("totalPoints: " + totalPoints);
+                    // console.log("totalHours: " + totalHours);
+                    // console.log("pointsToHours: " + pointsToHours);
 
                     convertHours(pointsToHours, teamStoryData);
                     draw(t, teamStoryData);
@@ -627,7 +632,6 @@ function processStoryPoints(t){
     }
 
     function convertHours(ratio, a){
-        console.log(ratio);
         for (i = 0; i < a.length ; i++){
             //console.log(a[i]);
             a[i].planEstimate *= ratio;
