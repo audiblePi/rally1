@@ -51,81 +51,6 @@ function draw(results, storyArray) {
 }
 
 
-function drawTable(results) {
-    //console.log("drawing table");
-    //console.log(results);
-    if (results.length == 0) {
-        hideWait();
-        document.getElementById("table_div").innerHTML = "";
-        document.getElementById("chart_div").innerHTML = "There are no team tasks in this iteration";
-        return;
-    }
-
-    var css = {
-        "headerRow": "headerRow",
-        "tableRow": "tableRow",
-        "oddTableRow": "tableRow",
-        "selectedTableRow": "tableRow",
-        "hoverTableRow": "tableRow",
-        "headerCell": "headerCell",
-        "tableCell": "tableCell",
-        "rowNumberCell": "tableCell"};
-    var options = {allowHtml: true, alternatingRowStyle: false, cssClassNames: css, sortColumn: 0};
-    var baseUrl = "";
-    if (!RALLY.Mashup.Utilities.isMashupRunningInsideRally()) {
-        baseUrl = "https://" + batchToolkit.getServer();
-    }
-    var data = new google.visualization.DataTable();
-    data.addColumn("number", "Rank");
-    data.addColumn("string", "ID");
-    data.addColumn("string", "Task");
-    data.addColumn("string", "Story");
-    data.addColumn("string", "State");
-    data.addColumn("number", "Estimate");
-    data.addColumn("number", "To-Do");
-    data.addColumn("number", "Actuals");
-    data.addColumn("string", "");
-    var row = 0;
-    var totalEstimate = 0;
-    var totalToDo = 0;
-    var totalActuals = 0;
-    for (var i = 0; i < results.length; i++) {
-        var task = results[i];
-        totalEstimate += task.Estimate;
-        totalToDo += task.ToDo;
-        totalActuals += task.Actuals;
-        data.addRows(1);
-        var column = 0;
-        data.setCell(row, column++, row + 1);
-        data.setCell(row, column++, "<a href=\"" + baseUrl + "/slm/rally.sp#/detail/task/" + task.ObjectID + "\" target=\"_parent\">" + task.FormattedID + "</a>");
-        data.setCell(row, column++, "<a href=\"" + baseUrl + "/slm/rally.sp#/detail/task/" + task.ObjectID + "\" target=\"_parent\">" + task.Name + "</a>");
-        data.setCell(row, column++, "<a href=\"" + baseUrl + "/slm/rally.sp#/detail/userstory/" + task.WorkProduct.ObjectID + "\" target=\"_parent\">" +
-                task.WorkProduct.FormattedID + ": " + task.WorkProduct.Name + "</a>");
-        if (task.Blocked == true) {
-            data.setCell(row, column, "Blocked", null, {"style": "color: red;"});
-        } else {
-            data.setCell(row, column, task.State, null, {"style": "color: green;"});
-        }
-        column++;
-        data.setCell(row, column++, task.Estimate);
-        data.setCell(row, column++, task.ToDo);
-        data.setCell(row, column++, task.Actuals);
-        var text = "<a href='#' class=\"sprite-edit\" title=\"Edit Task " + task.FormattedID + "\"" +
-                "onclick=\"parent.popup('" + baseUrl + "/slm/tk/edit.sp?oid=" + task.ObjectID + "', " +
-                "800, 600, 'littleN');return false;\">&nbsp;&nbsp;&nbsp;&nbsp;</a>";
-        data.setCell(row, column++, text, null, {"style": "text-align: center;"});
-        row++;
-    }
-    data.setColumnLabel(column - 4, "Estimate<br>&nbsp;&nbsp;&nbsp;&nbsp;" + totalEstimate);
-    data.setColumnLabel(column - 3, "To-Do<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + totalToDo);
-    data.setColumnLabel(column - 2, "Actuals<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + totalActuals);
-    var table = new google.visualization.Table(document.getElementById("table_div"));
-    table.draw(data, options);
-    //console.log(data);
-    hideWait();
-}
-
-
 function by(property) {
     return function(o, p) {
         var a, b;
@@ -299,11 +224,9 @@ function drawChart(startDate, endDate, results, storyArray) {
     if (today < cutoff) {
         cutoff = today;
     }
+
     var todo = 0;
     var todoArray = [];
-    var accepted = 0;
-    var actual = 0;
-    var acceptedPointsArray = [];
     var i = 0;
     var j = 0; 
     while (date <= cutoff) {
@@ -321,10 +244,14 @@ function drawChart(startDate, endDate, results, storyArray) {
         }
     }
 
+
+    var accepted = 0;
+    var actual = 0;
+    var acceptedPointsArray = [];
     var s = 0;
     var t = 0; 
     date = new Date(startDate.getTime());
-    cutoff = new Date(endDate.getTime());
+    //cutoff = new Date(endDate.getTime());
     while (date <= cutoff) {
         var roundedDate = new Date(date.getTime());
         roundedDate.setHours(15);
@@ -343,8 +270,8 @@ function drawChart(startDate, endDate, results, storyArray) {
 
 
 
-
-    //console.log(endDate);
+    date = new Date(startDate.getTime());
+    console.log(date);
 
 
 
@@ -354,11 +281,6 @@ function drawChart(startDate, endDate, results, storyArray) {
     var newTodoArray = [];
     for (var i = 0; i < todoArray.length; i++) {
         var newdate = reFormatDate(todoArray[i][0]);
-        // var temp = [
-        //     i,
-        //     todoArray[i][1],
-        //     newdate
-        // ];
         var temp = [
             newdate,
             todoArray[i][1]
@@ -366,7 +288,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         newTodoArray.push(temp);
     }
     // console.log("newTodoArray");
-    //console.log(newTodoArray);
+    // console.log(newTodoArray);
     burndownChart.addSeries(new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(newTodoArray),
         {
@@ -382,17 +304,11 @@ function drawChart(startDate, endDate, results, storyArray) {
 
 
 
-
     acceptedPointsArray.splice(3, 2);
     acceptedPointsArray.splice(8, 2);
     var newAcceptedArray = [];
     for (var i = 0; i < acceptedPointsArray.length; i++) {
         var newdate = reFormatDate(acceptedPointsArray[i][0]);
-        // var temp = [
-        //     i,
-        //     acceptedPointsArray[i][1],
-        //     newdate
-        // ];
         var temp = [
             newdate,
             acceptedPointsArray[i][1],
@@ -428,27 +344,28 @@ function drawChart(startDate, endDate, results, storyArray) {
     var idealArray = [];
     var idealY = totalEstimate;
     var j = 1;
-    var t = 0;
+    var t;
+    var newdate2;
 
-    for (var t = 1; t <= workingDays; t++) {
-        var newdate;
-        if (t>0){
-            newdate = reFormatDate(acceptedPointsArray[t-1][0]);
+    for (t = 0; t < 14; t++) {
+        if ( (t > 2 && t < 5) || (t > 9 && t < 12) ){
+            console.log("skip");
         }
-        else{
-            newdate = new Date(todoArray[0][0]);
-            newdate.setDate(newdate.getDate() - 1);
-            newdate = reFormatDate(newdate);
-            console.log(newdate);
-        }
+        else {
+            newdate2 = new Date(startDate.getTime());
+            //console.log(newdate2);
+            newdate2 = newdate2.setDate(newdate2.getDate() + t);
+            newdate2 = reFormatDate(newdate2);
+            console.log(newdate2);
 
-        idealY = totalEstimate - (t * incrementY);
-        //idealArray.push([t-1, idealY, newdate]);
-        idealArray.push([newdate, idealY]);
+            idealY = totalEstimate - (j * incrementY);
+            idealArray.push([newdate2, idealY]);
+            j++;
+        }
     }
 
-    // console.log("idealArray");
-    // console.log(idealArray);
+    console.log("idealArray");
+    console.log(idealArray);
     burndownChart.addSeries(new EJSC.LineSeries(
         new EJSC.ArrayDataHandler(idealArray),
         {
@@ -598,11 +515,6 @@ function processStoryPoints(t){
                     var totalHours = countTaskHours(t);
                     var pointsToHours = (totalHours/maxPoints).toFixed(2);
 
-                    // console.log("maxPoints: "+ maxPoints);
-                    // console.log("totalPoints: " + totalPoints);
-                    // console.log("totalHours: " + totalHours);
-                    // console.log("pointsToHours: " + pointsToHours);
-
                     convertHours(pointsToHours, teamStoryData);
                     draw(t, teamStoryData);
 
@@ -615,9 +527,7 @@ function processStoryPoints(t){
         var count = 0;
         for (i = 0; i < a.length ; i++){
             count += a[i].planEstimate;
-            //console.log(a[i].planEstimate);
         }
-        //console.log(count);
         return count;
     }
 
@@ -625,17 +535,13 @@ function processStoryPoints(t){
         var count = 0;
         for (i = 0; i < t.length ; i++){
             count += t[i].Estimate;
-            //console.log(count);
         }
-        //console.log(count);
         return count;
     }
 
     function convertHours(ratio, a){
         for (i = 0; i < a.length ; i++){
-            //console.log(a[i]);
             a[i].planEstimate *= ratio;
-            //console.log(a[i]);
         }
     }
 
