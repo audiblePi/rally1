@@ -129,7 +129,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         if (series.title.indexOf("Trend") >= 0) {
             return '[series_title]<br/>' + Math.round(point.y*100)/100 + ' Points';
         } else if (series.title.indexOf("Ideal") >= 0) {
-            return '[series_title]<br/>Value: ' + Math.round(point.y*100)/100;
+            return '[series_title]<br/>' + Math.round(point.y*100)/100 + ' Points';
         } else if (series.title.indexOf("Accepted") >= 0) {
             return '[series_title]<br/>[label] Points';
         } 
@@ -270,9 +270,6 @@ function drawChart(startDate, endDate, results, storyArray) {
 
 
 
-    date = new Date(startDate.getTime());
-    console.log(date);
-
 
 
     //lets remove the weekends
@@ -349,14 +346,12 @@ function drawChart(startDate, endDate, results, storyArray) {
 
     for (t = 0; t < 14; t++) {
         if ( (t > 2 && t < 5) || (t > 9 && t < 12) ){
-            console.log("skip");
+            continue;
         }
         else {
             newdate2 = new Date(startDate.getTime());
-            //console.log(newdate2);
             newdate2 = newdate2.setDate(newdate2.getDate() + t);
             newdate2 = reFormatDate(newdate2);
-            console.log(newdate2);
 
             idealY = totalEstimate - (j * incrementY);
             idealArray.push([newdate2, idealY]);
@@ -364,8 +359,8 @@ function drawChart(startDate, endDate, results, storyArray) {
         }
     }
 
-    console.log("idealArray");
-    console.log(idealArray);
+    // console.log("idealArray");
+    // console.log(idealArray);
     burndownChart.addSeries(new EJSC.LineSeries(
         new EJSC.ArrayDataHandler(idealArray),
         {
