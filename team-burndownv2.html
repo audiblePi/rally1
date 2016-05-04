@@ -30,6 +30,8 @@ var teamTasks = [];
 var tasksProcessed;
 var numTeamMemebers;
 var _MAXHOURS;
+var _MAXPOINTS;
+
 
 
 function draw(results, storyArray) {
@@ -113,6 +115,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         axis_left: {
             caption: 'Hours',
             min_extreme:0,
+            max_extreme:_MAXPOINTS,
             major_ticks: {
                show: true,
                count: 10
@@ -545,6 +548,8 @@ function processStoryPoints(t){
                     var totalPoints = countStoryPoints(teamStoryData);
                     var totalHours = countTaskHours(t);
                     var pointsToHours = (totalHours/maxPoints).toFixed(2);
+
+                    _MAXPOINTS = totalHours;
                     
                     $('#totalHours').html('<strong>Total Hours:</strong> ' + totalHours);
                     $('#maxPoints').html('<strong>Total Points:</strong> ' + maxPoints);
@@ -739,9 +744,17 @@ function getData(call) {
                             <div id="dates_div" style="margin-left: 10px"></div>
                         </td>
                     </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div id="totalHours"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div id="maxPoints"></div>
+                        </td>
+                    </tr>
                 </table>
-                <div id="totalHours"></div>
-                <div id="maxPoints"></div>
                 <br/>
 
                 <div id="spinner_div" style="clear: both;"></div>
