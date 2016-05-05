@@ -103,6 +103,10 @@ function drawChart(startDate, endDate, results, storyArray) {
     minDate.setDate(minDate.getDate() - 1);
     var maxDate = new Date(endDate.getTime());
     maxDate.setDate(maxDate.getDate() + 3);
+
+    var intervalHours = Math.round( _MAXHOURS / 100 ) * 10;
+    var intervalPoints = Math.round( _MAXPOINTS / 100 ) * 10;
+
     var burndownChart = new EJSC.Chart(thisChartDiv, {
         show_legend: false,
         show_titlebar: false,
@@ -116,10 +120,11 @@ function drawChart(startDate, endDate, results, storyArray) {
             caption: 'Hours',
             min_extreme:0,
             max_extreme:_MAXPOINTS,
+            extremes_ticks: true,
             major_ticks: {
                show: true,
-               count: 10
-            },
+               max_interval: intervalHours            
+           },
             formatter: new EJSC.NumberFormatter({variable_decimals: 0 }),
             visible: true
         },
@@ -128,8 +133,9 @@ function drawChart(startDate, endDate, results, storyArray) {
             max_extreme:_MAXHOURS,
             major_ticks: {
                show: true,
-               count: 10
+               max_interval: intervalHours
             },
+            grid: {show:false},
             formatter: new EJSC.NumberFormatter({variable_decimals: 0 }),
             caption: "Points",
             visible: true
@@ -234,6 +240,10 @@ function drawChart(startDate, endDate, results, storyArray) {
     if (today < cutoff) {
         cutoff = today;
     }
+    var dayBefore = new Date();
+    dayBefore = reFormatDate(dayBefore.setDate(date.getDate() - 1) );
+    
+
 
 
 
@@ -259,6 +269,8 @@ function drawChart(startDate, endDate, results, storyArray) {
             i++;
         }
     }
+
+
 
 
 
@@ -297,6 +309,9 @@ function drawChart(startDate, endDate, results, storyArray) {
     todoArray.splice(3, 2);
     todoArray.splice(8, 2);
     var newTodoArray = [];
+
+    newTodoArray.push([dayBefore, totalEstimate]);
+
     for (var i = 0; i < todoArray.length; i++) {
         var newdate = reFormatDate(todoArray[i][0]);
         var temp = [
@@ -330,6 +345,8 @@ function drawChart(startDate, endDate, results, storyArray) {
     acceptedPointsArray.splice(8, 2);
     var newAcceptedArray = [];
 
+    //newAcceptedArray.push([dayBefore, 0, 0]);
+
     for (var i = 0; i < acceptedPointsArray.length; i++) {
         var newdate = reFormatDate(acceptedPointsArray[i][0]);
         var temp = [
@@ -340,7 +357,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         newAcceptedArray.push(temp);
     }
     // console.log("newAcceptedArray");
-    // console.log(newAcceptedArray);
+    //console.log(newAcceptedArray);
     burndownChart.addSeries(new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(newAcceptedArray),
         {
@@ -376,12 +393,7 @@ function drawChart(startDate, endDate, results, storyArray) {
     var t;
     var newdate2;
 
-    // newdate2 = new Date(startDate.getTime());
-    // newdate2 = newdate2.setDate(newdate2.getDate() - 1);
-    // newdate2 = reFormatDate(newdate2);
-
-    // idealY = totalEstimate;
-    // idealArray.push([newdate2, idealY]);
+    idealArray.push([dayBefore, totalEstimate]);
 
     for (t = 0; t < 14; t++) {
         if ( (t > 2 && t < 5) || (t > 9 && t < 12) ){
@@ -398,7 +410,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         }
     }
     // console.log("idealArray");
-    //console.log(idealArray);
+    // console.log(idealArray);
     burndownChart.addSeries(new EJSC.LineSeries(
         new EJSC.ArrayDataHandler(idealArray),
         {
@@ -410,7 +422,7 @@ function drawChart(startDate, endDate, results, storyArray) {
                 variable_decimals: 3
             }),
             drawPoints: true,
-
+            autosort: true
         }
     ));
 
@@ -707,6 +719,14 @@ function getData(call) {
         background-repeat: no-repeat;
         background-position: center center;
     }
+    .myLegend{
+        position: absolute;
+        right: 30%;
+        top: 30%;
+        border: 1px solid;
+        padding: 1rem;
+        background: #fff;
+    }
 </style>
 </head>
 <body>
@@ -744,7 +764,7 @@ function getData(call) {
                             <div id="dates_div" style="margin-left: 10px"></div>
                         </td>
                     </tr>
-                    <tr>
+                   <!--  <tr>
                         <td colspan="3">
                             <div id="totalHours"></div>
                         </td>
@@ -753,7 +773,7 @@ function getData(call) {
                         <td colspan="3">
                             <div id="maxPoints"></div>
                         </td>
-                    </tr>
+                    </tr> -->
                 </table>
                 <br/>
 
@@ -764,6 +784,10 @@ function getData(call) {
     </table>
 </div>
 <div>
+    <div class="myLegend">
+        <div id="totalHours"></div>
+        <div id="maxPoints"></div>
+    </div>
     <table width="100%">
         <tr>
             <td style="vertical-align: top; width: 100%">
