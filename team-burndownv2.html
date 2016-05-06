@@ -107,6 +107,8 @@ function drawChart(startDate, endDate, results, storyArray) {
     var intervalHours = Math.round( _MAXHOURS / 100 ) * 10;
     var intervalPoints = Math.round( _MAXPOINTS / 100 ) * 10;
 
+    intervalHours = (intervalHours < 40) ? 40 : intervalHours;
+
     var burndownChart = new EJSC.Chart(thisChartDiv, {
         show_legend: false,
         show_titlebar: false,
@@ -240,9 +242,10 @@ function drawChart(startDate, endDate, results, storyArray) {
     if (today < cutoff) {
         cutoff = today;
     }
-    var dayBefore = new Date();
-    dayBefore = reFormatDate(dayBefore.setDate(date.getDate() - 1) );
-    
+
+    var dayBefore = new Date(startDate.getTime());
+    dayBefore = dayBefore.setDate(dayBefore.getDate() - 1);
+    dayBefore = reFormatDate(dayBefore);
 
 
 
@@ -430,6 +433,10 @@ function drawChart(startDate, endDate, results, storyArray) {
 }
 
 
+
+
+
+
 function convertIsoDate(isoDate) {
     var jsDate = RALLY.Mashup.Utilities.convertIsoToJSDate(isoDate);
     jsDate.setMinutes(jsDate.getMinutes() - jsDate.getTimezoneOffset());
@@ -481,7 +488,7 @@ function continueMainQuery(t){
 function runTeamQuery(a){
     //console.log("running team query");
     showWait("<em>Loading chart...</em>");
-    //console.log(t);
+    //console.log(a);
     tasksProcessed = 0;
     teamTasks = [];
 
@@ -622,14 +629,14 @@ function initPage() {
 
 
 function showWait(message) {
-    RALLY.Mashup.Utilities.showWait("spinner_div", ["chart_div", "table_div"]);
+    RALLY.Mashup.Utilities.showWait("spinner_div", ["chart_div", "table_div", "myLegend"]);
     var spinner = document.getElementById("spinner_div").innerHTML;
     document.getElementById("spinner_div").innerHTML = spinner + " " + message;
 }
 
 
 function hideWait() {
-    RALLY.Mashup.Utilities.hideWait("spinner_div", ["chart_div", "table_div"]);
+    RALLY.Mashup.Utilities.hideWait("spinner_div", ["chart_div", "myLegend", "table_div"]);
 }
 
 
@@ -719,13 +726,20 @@ function getData(call) {
         background-repeat: no-repeat;
         background-position: center center;
     }
-    .myLegend{
+    #myLegend{
         position: absolute;
-        right: 30%;
+        right: 25%;
         top: 30%;
         border: 1px solid;
-        padding: 1rem;
+        padding: .5rem;
         background: #fff;
+        visibility:hidden;
+    }
+    #totalHours{
+        margin-bottom:.5rem;
+    }
+    #chart_div{
+        width:100%!important;
     }
 </style>
 </head>
@@ -778,13 +792,13 @@ function getData(call) {
                 <br/>
 
                 <div id="spinner_div" style="clear: both;"></div>
-                <div id="chart_div" class="chart" style="width: 400px; height: 200px;"></div>
+                <div id="chart_div" class="chart" style="width:100%; height: 200px;"></div>
             </td>
         </tr>
     </table>
 </div>
 <div>
-    <div class="myLegend">
+    <div id="myLegend">
         <div id="totalHours"></div>
         <div id="maxPoints"></div>
     </div>
