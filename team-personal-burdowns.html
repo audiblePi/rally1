@@ -1,4 +1,3 @@
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
@@ -153,7 +152,7 @@ function drawChart(startDate, endDate, results) {
     thisChartDivTitle.innerHTML = results.tasks[0].Owner._refObjectName;
     thisChartDiv.setAttribute("id", thisDivId);
     thisChartDiv.setAttribute("class", "chart");
-    thisChartDiv.setAttribute("style", "width: "+chartWidth+"; height: 400px;");
+    thisChartDiv.setAttribute("style", "width: "+chartWidth+"; height: 200px;");
 
     //console.log(thisChartDiv);
     //console.log(thisChartDivTitle);
@@ -357,6 +356,7 @@ function runMainQuery() {
     //console.log("__USER_NAME__");
     var teamMemberQuery = getTeamMembers("/Project/25758763437/TeamMembers");
     var teamMembers;
+    $('#chart_div').empty();
     teamMemberQuery.success(function (data) {
         teamMembers = data.QueryResult.Results;
         //console.log(teamMembers);
