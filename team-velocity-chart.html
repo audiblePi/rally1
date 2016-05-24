@@ -1,0 +1,892 @@
+<!--Personal Velocities Psuedo Code
+===============================
+-Get Team Members
+-Get all iterations for digital ux
+-Create Drop Down
+-On Dropdown select
+    For each iteration (last ten <= to this iteration)
+        get all story points
+        get all accepted story points
+        get all accpeted story points after end of iteration
+        save to Iteration array
+-Graph Iteration Array
+
+
+
+Team Velocities Psuedo Code
+===========================
+-Get Team Members
+-Get all iterations for digital ux
+-For each iteration (last ten <= to this iteration)
+    For each team member
+        total story points += get all story points
+        total accepted story points += get all accepted story points
+        total accepted after iteration += get all accpeted story points after end of iteration
+    save totals to Iteration array
+-Graph Iteration Array-->
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>Digital UX Team Burndown</title>
+<meta name="Name" content="App: Digital UX Team Burndown"/>
+<meta name="Version" content="1.0"/>
+<meta name="Vendor" content="Brian Hicks"/>
+<link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/slm.css" charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/sprites.css" charset="utf-8"/>
+<script type="text/javascript" src="https://rally1.rallydev.com/slm/js/slm.js"></script>
+<script type="text/javascript" src="https://rally1.rallydev.com/slm/js-lib/dojo/1.3.1/dojo/dojo.js"></script>
+<script type="text/javascript" src="https://rally1.rallydev.com/apps/1.33/lib/ejsc/EJSChart.js"></script>
+<script type="text/javascript" src="https://rally1.rallydev.com/slm/mashup/1.19/js/utilities.js"></script>
+<script type="text/javascript" src="https://rally1.rallydev.com/slm/mashup/1.19/js/dropdown.js"></script>
+<script type="text/javascript" src="https://rally1.rallydev.com/slm/mashup/1.19/js/batch-toolkit.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<!--<script type="text/javascript" src="https://subversion.bcbsfl.com/repos/crm/uxt/lib/trunk/foundation/5.5.0/js/vendor/jquery.js"></script>-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script type="text/javascript">
+google.load("visualization", "1", {packages:["table"]});
+dojo.require("dojo.date.stamp");
+dojo.addOnLoad(initPage);
+var WORK_WEEKENDS = false;
+var iterationDropdown;
+var batchToolkit;
+var widgetMode;
+var ONE_DAY = 1000 * 60 * 60 * 24;
+var DEBUG = false;
+var teamTasks = [];
+var tasksProcessed;
+var numTeamMemebers;
+var _MAXHOURS;
+var _MAXPOINTS;
+var _TODAY = null;
+
+
+
+
+function draw(results, storyArray) {
+    //console.log('drawing results');
+    //console.log(results);
+    //console.log(results.tasks[0].Owner._refObjectName);
+    var startDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedStart());
+    startDate.setHours(23);
+    startDate.setMinutes(59);
+    startDate.setSeconds(59);
+    var endDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedEnd());
+    endDate.setHours(23);
+    endDate.setMinutes(59);
+    endDate.setSeconds(59);
+    document.getElementById("dates_div").innerHTML = formatDate(startDate) + " - " + formatDate(endDate);
+    if (!widgetMode) {
+        drawTable(results);
+    }
+    drawChart(startDate, endDate, results, storyArray);
+}
+
+
+function by(property) {
+    return function(o, p) {
+        var a, b;
+        if (typeof o === "object" && typeof p === "object" && o && p) {
+            a = o[property];
+            b = p[property];
+            if (a === b) {
+                return 0;
+            }
+            if (typeof a === typeof b) {
+                return a < b ? -1 : 1;
+            }
+            return typeof a < typeof b ? -1 : 1;
+        }
+    };
+}
+
+
+function drawChart(startDate, endDate, results, storyArray) {
+    //console.log("drawing chart");
+    // console.log(results);
+    // console.log(storyArray);
+    
+    var randomNum = Math.floor((Math.random() * 100) + 1);
+    var thisDivId = "this-div-" + randomNum.toString();
+    var thisChartDiv = document.createElement("DIV");
+    var chartWidth = Math.floor(getAvailableWidth() * 0.90) - 5;
+      
+    thisChartDiv.setAttribute("id", thisDivId);
+    thisChartDiv.setAttribute("class", "chart");
+    thisChartDiv.setAttribute("style", "width: 90%; height: 400px; margin:auto;");
+
+    $("#chart_div").empty();
+    document.getElementById("chart_div").appendChild(thisChartDiv);
+
+    if (typeof burndownChart !== "undefined") {
+        burndownChart.remove();
+    }
+    if (results.length == 0) {
+        hideWait();
+        document.getElementById("table_div").innerHTML = "";
+        document.getElementById("chart_div").innerHTML = "You do not have any tasks in this iteration";
+        thisChartDiv.innerHTML = "You do not have any tasks in this iteration";
+        return;
+    }
+    var minDate = new Date(startDate.getTime());
+    minDate.setDate(minDate.getDate() - 1);
+    var maxDate = new Date(endDate.getTime());
+    maxDate.setDate(maxDate.getDate() + 3);
+
+    var intervalHours = Math.round( _MAXHOURS / 100 ) * 10;
+    var intervalPoints = Math.round( _MAXPOINTS / 100 ) * 10;
+
+    intervalHours = (intervalHours < 40) ? 40 : intervalHours;
+
+    var burndownChart = new EJSC.Chart(thisChartDiv, {
+        show_legend: false,
+        show_titlebar: false,
+        allow_zoom: false,
+        //title: "Digital UX Team Burndown",
+        axis_bottom: {
+            caption: "Date",
+            grid: {show:false},
+        },
+        axis_left: {
+            caption: 'Hours',
+            min_extreme:0,
+            max_extreme:_MAXPOINTS,
+            extremes_ticks: true,
+            major_ticks: {
+               show: true,
+               max_interval: intervalHours            
+           },
+            formatter: new EJSC.NumberFormatter({variable_decimals: 0 }),
+            visible: true
+        },
+        axis_right: { 
+            min_extreme:0,
+            max_extreme:_MAXHOURS,
+            major_ticks: {
+               show: true,
+               max_interval: intervalHours
+            },
+            grid: {show:false},
+            formatter: new EJSC.NumberFormatter({variable_decimals: 0 }),
+            caption: "Points",
+            visible: true
+        }
+
+    });
+    burndownChart.onShowHint = function(point, series, chart, hint, hoverOrSelect) {
+        if (series.title.indexOf("Trend") >= 0) {
+            return '[series_title]<br/>' + Math.round(point.y*100)/100 + ' Points';
+        } else if (series.title.indexOf("Ideal") >= 0) {
+            return '[series_title]<br/>' + Math.round(point.y*100)/100 + ' Points';
+        } else if (series.title.indexOf("Accepted") >= 0) {
+            return '[series_title]<br/>[label] Points';
+        } 
+        else {
+            return '[series_title]<br>' + Math.round(point.y*100)/100 + ' Hours';
+        }
+    };
+    var totalEstimate = 0;
+    var history = []
+    for (var i = 0; i < results.length; i++) {
+        var task = results[i];
+        totalEstimate += task.Estimate;
+        var initialToDo = -1;
+        var initialRevision = -1;
+        var matches;
+        var revisions = task.RevisionHistory.Revisions;
+        for (var j = revisions.length - 1; j >= 0; j--) {
+            var creationDate = convertIsoDate(revisions[j].CreationDate);
+            if (DEBUG) {
+                console.log(task.FormattedID + " " + task.WorkProduct.FormattedID + " " + creationDate + " " + revisions[j].Description);
+            }
+            var delta = 0;
+            var matched = false;
+            if (revisions[j].Description.indexOf("Original revision") == 0) {
+                delta = task.Estimate;
+                matched = true;
+                initialRevision = history.length;
+            } else {
+                if (revisions[j].Description.indexOf("TO DO added") >= 0) {
+                    matches = /.*?TO DO added.*?(\d+\.\d+).*?/.exec(revisions[j].Description);
+                    if (initialToDo == -1) {
+                        initialToDo = parseFloat(matches[1]);
+                    } else {
+                        delta = parseFloat(matches[1]);
+                        matched = true;
+                    }
+                }
+                if (revisions[j].Description.indexOf("TO DO changed from") >= 0) {
+                    matches = /.*?TO DO changed from.*?(\d+\.\d+).*?(\d+\.\d+).*?/.exec(revisions[j].Description);
+                    if (initialToDo == -1) {
+                        initialToDo = parseFloat(matches[1]);
+                    }
+                    delta = matches[2] - matches[1];
+                    matched = true;
+                }
+                if (revisions[j].Description.indexOf("TO DO removed") >= 0) {
+                    matches = /.*?TO DO removed.*?(\d+\.\d+).*?/.exec(revisions[j].Description);
+                    if (initialToDo == -1) {
+                        initialToDo = parseFloat(matches[1]);
+                    }
+                    delta = -1 * matches[1];
+                    matched = true;
+                }
+            }
+            if (matched) {
+                if (DEBUG) {
+                    console.log(task.FormattedID + " delta: " + delta);
+                }
+                history.push({
+                    "FormattedID": task.FormattedID,
+                    "CreationDate": creationDate,
+                    "Delta": delta
+                });
+            }
+        }
+        if (initialToDo == -1 && task.ToDo == 0) {
+            initialToDo = 0;
+        }
+        if (initialRevision != -1 && initialRevision < history.length && initialToDo >= 0) {
+            if (DEBUG) {
+                console.log(task.FormattedID + " Overriding Initial To Do: " + initialToDo);
+            }
+            history[initialRevision].Delta = initialToDo;
+        }
+    }
+    
+    history.sort(by("CreationDate"));
+    if (DEBUG) {
+        console.log("History:");
+        for (var i = 0; i < history.length; i++) {
+            console.log(history[i].FormattedID + " " + history[i].CreationDate + " Delta: " + history[i].Delta);
+        }
+    }
+
+    var date = new Date(startDate.getTime());
+    var today = new Date();
+    today.setHours(23);
+    today.setMinutes(59);
+    today.setSeconds(59);
+    var cutoff = new Date(endDate.getTime());
+    if (today < cutoff) {
+        cutoff = today;
+    }
+
+    var dayBefore = new Date(startDate.getTime());
+    dayBefore = dayBefore.setDate(dayBefore.getDate() - 1);
+    dayBefore = reFormatDate(dayBefore);
+
+
+
+
+
+
+
+
+    var todo = 0;
+    var todoArray = [];
+    var i = 0;
+    var j = 0; 
+    while (date <= cutoff) {
+        var roundedDate = new Date(date.getTime());
+        roundedDate.setHours(15);
+    
+        if (j < history.length && history[j].CreationDate <= date) {
+            todo += history[j].Delta;
+            todoArray[i] = [roundedDate.getTime(), todo];
+            j++;
+        } else {
+            todoArray[i] = [roundedDate.getTime(), todo];
+            date.setDate(date.getDate() + 1);
+            i++;
+        }
+    }
+
+
+
+
+
+
+
+    var accepted = 0;
+    var actual = 0;
+    var acceptedPointsArray = [];
+    var s = 0;
+    var t = 0; 
+    date = new Date(startDate.getTime());
+    //cutoff = new Date(endDate.getTime());
+    while (date <= cutoff) {
+        var roundedDate = new Date(date.getTime());
+        roundedDate.setHours(15);
+
+        if (t < storyArray.length && convertIsoDate(storyArray[t].acceptedDate) <= date) {
+            accepted += storyArray[t].planEstimate;
+            actual += storyArray[t].planActual;
+            acceptedPointsArray[s] = [roundedDate.getTime(), accepted, actual];
+            t++;
+        } else {
+            acceptedPointsArray[s] = [roundedDate.getTime(), accepted, actual];
+            date.setDate(date.getDate() + 1);
+            s++;
+        }
+    }
+
+
+
+
+
+
+
+    //lets remove the weekends
+    todoArray.splice(3, 2);
+    todoArray.splice(8, 2);
+    var newTodoArray = [];
+
+    //newTodoArray.push([dayBefore, totalEstimate]);
+
+    for (var i = 0; i < todoArray.length; i++) {
+        var newdate = reFormatDate(todoArray[i][0]);
+        var temp = [
+            newdate,
+            todoArray[i][1]
+        ];
+        newTodoArray.push(temp);
+    }
+    // console.log("newTodoArray");
+    // console.log(newTodoArray);
+    burndownChart.addSeries(new EJSC.BarSeries(
+        new EJSC.ArrayDataHandler(newTodoArray),
+        {
+            title: "To Do",
+            color: "#5C9ACB",
+            opacity: 100,
+            lineWidth: 1
+        }
+    ));
+
+
+
+
+
+
+
+
+
+
+    acceptedPointsArray.splice(3, 2);
+    acceptedPointsArray.splice(8, 2);
+    var newAcceptedArray = [];
+
+    //newAcceptedArray.push([dayBefore, 0, 0]);
+
+    for (var i = 0; i < acceptedPointsArray.length; i++) {
+        var newdate = reFormatDate(acceptedPointsArray[i][0]);
+        var temp = [
+            newdate,
+            acceptedPointsArray[i][1],
+            acceptedPointsArray[i][2],
+        ];
+        newAcceptedArray.push(temp);
+    }
+    // console.log("newAcceptedArray");
+    //console.log(newAcceptedArray);
+    burndownChart.addSeries(new EJSC.BarSeries(
+        new EJSC.ArrayDataHandler(newAcceptedArray),
+        {
+            title: "Accepted",
+            color: "#6AB17D",
+            opacity: 50,
+            lineWidth: 1,
+            y_axis: "right"
+        }
+    ));
+
+
+
+
+
+
+
+
+
+
+
+    var totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / ONE_DAY);
+    var workingDays = 0;
+    for (var d = new Date(startDate.getTime()); d <= endDate; d.setDate(d.getDate() + 1)) {
+        if (WORK_WEEKENDS || (d.getDay() != 0 && d.getDay() != 6)) {
+            workingDays++;
+        }
+    }
+    var incrementY = totalEstimate / (workingDays);
+    var idealArray = [];
+    var idealY = totalEstimate;
+    var j = 1;
+    var t;
+    var newdate2;
+
+    //idealArray.push([dayBefore, totalEstimate]);
+
+    for (t = 0; t < 14; t++) {
+        if ( (t > 2 && t < 5) || (t > 9 && t < 12) ){
+            continue;
+        }
+        else {
+            newdate2 = new Date(startDate.getTime());
+            newdate2 = newdate2.setDate(newdate2.getDate() + t);
+            newdate2 = reFormatDate(newdate2);
+
+            idealY = totalEstimate - (j * incrementY);
+            idealArray.push([newdate2, idealY]);
+            j++;
+        }
+    }
+    // console.log("idealArray");
+    // console.log(idealArray);
+    burndownChart.addSeries(new EJSC.LineSeries(
+        new EJSC.ArrayDataHandler(idealArray),
+        {
+            title: "Ideal Burndown",
+            lineWidth: 1,
+            color: "#000",
+            opacity: 100,
+            y_axis_formatter: new EJSC.NumberFormatter({
+                variable_decimals: 3
+            }),
+            drawPoints: true,
+            autosort: true
+        }
+    ));
+
+    hideWait();
+}
+
+
+
+
+
+
+function convertIsoDate(isoDate) {
+    var jsDate = RALLY.Mashup.Utilities.convertIsoToJSDate(isoDate);
+    jsDate.setMinutes(jsDate.getMinutes() - jsDate.getTimezoneOffset());
+    return jsDate;
+}
+
+function reFormatDate(date){
+    var d = new Date(date);
+    var month = d.getMonth() + 1;
+    var day = d.getDate();
+    var newdate = month + "/" + day;
+    return newdate;
+}
+
+
+function formatDate(date) {
+    var day = date.getDate();
+    if (day < 10) {
+        day = "0" + day;
+    }
+    var month = date.getMonth() + 1;
+    if (month < 10) {
+        month = "0" + month;
+    }
+    var year = date.getFullYear();
+    return month + "/" + day + "/" + year;
+}
+
+function dateToISOString(date) {
+    return dojo.date.stamp.toISOString(date, {milliseconds: true, zulu: true});
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*******************************************************************************/
+
+function initPage() {
+    console.log("initPage");
+    _TODAY = dateToISOString(new Date());
+    console.log(_TODAY);
+    RALLY.Mashup.Utilities.showPrintButton();
+    widgetMode = RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "widget" || RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "panel";
+    batchToolkit = new RALLY.Mashup.BatchToolkit("__WORKSPACE_OID__", "__PROJECT_OID__",
+            "__PROJECT_SCOPING_UP__", "__PROJECT_SCOPING_DOWN__");
+    var chartWidth = Math.floor(getAvailableWidth() * 0.90) - 5;
+    if (widgetMode) {
+        document.getElementById("chart_div").style.width = chartWidth + "px";
+    } else {
+        document.getElementById("title_div").style.display = "block";
+        document.getElementById("print_div").style.display = "block";
+    }
+    document.getElementById("title_div").style.display = "block";
+    document.getElementById("print_div").style.display = "block";
+    runTeamMemberQuery();
+}
+
+function runTeamMemberQuery() {
+    console.log("running team member query");
+    var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
+    var teamMembers;
+    teamMemberQuery.success(function (data) {
+        teamMembers = data.QueryResult.Results;
+        console.log(teamMembers);
+        buildSelect(teamMembers);
+    });
+}
+
+function buildSelect(t){
+    console.log("buildiing select");
+    var select = $("select#teamList");
+    for (i = 0; i < t.length; i++){
+        select.append("<option value="+t[i].UserName+">"+t[i].FirstName+" "+t[i].LastName+"</option>");
+    }
+    $("select#teamList").on("change", function(){
+        runIterationQuery($(this).val());
+    });
+}
+
+function runIterationQuery(a){
+    console.log("running iteration query");
+    var digitalUX = "16732622451"; //Digital UX
+    var webAndMobile = "25758763437"; //Web & Mobile
+    
+    // var iterationQuery = getData("/Project/"+digitalUX+"/Iterations?query=(EndDate <= \""+_TODAY+"\")&order=EndDate desc");
+    // iterationQuery.success(function (data) {
+    //     runIndQuery(data, a);
+    // });
+
+    var prev_query = {
+        key: "prev_iterations",
+        type: "iteration",
+        order: "EndDate desc",
+        fetch: "EndDate,StartDate,State,ObjectID,Name,Project",
+        query: "( ( EndDate <= " + _TODAY + " ) AND (Project.ObjectID = \"" + digitalUX + "\") )"
+    };
+    batchToolkit.find(prev_query, function(results){
+        if (results.errors.length == 0 ){
+            runIndQuery(results.prev_iterations, a);
+        }
+        else{
+            console.log("Something went wrong");
+            console.log(results.errors);
+        }
+    });
+}
+
+
+function runIndQuery(i, a){
+    console.log("running individual query");
+    showWait("<em>Loading chart...</em>");
+    
+    console.log(i);
+    //console.log(a);
+
+    // tasksProcessed = 0;
+    // teamTasks = [];
+
+    //console.log(a.length);
+    //numTeamMemebers = a.length;
+
+    for (n = 0; n < 10 ; n++) {
+        console.log( i[n].Name );
+        //console.log(a[i].UserName);
+        // var taskQuery = {
+        //     key: "tasks",
+        //     type: "Task",
+        //     fetch: "FormattedID,Name,ObjectID,Rank,State,Blocked,Estimate,ToDo,Actuals,WorkProduct,RevisionHistory,Revisions,Owner",
+        //     order: "Rank",
+        //     query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND (Owner = \"" + a + "\"))"
+        // };
+        //console.log(taskQuery);
+        //batchToolkit.findAll(taskQuery, processResults);
+    }
+}
+
+
+
+
+function processResults(results){
+    for (i = 0; i < results.tasks.length ; i++)
+        teamTasks.push(results.tasks[i]);
+    tasksProcessed++;
+
+
+    if ( tasksProcessed == numTeamMemebers){
+        processStoryPoints(teamTasks);
+    }
+}
+
+function processStoryPoints(t){
+    var teamStories = [];
+    var teamStoryData = [];
+    var storiesProcessed = 0;
+    var count = 0;
+    var errors = 0;
+    var maxPoints = 0;
+
+    //only need unique story id's
+    for (i = 0; i < t.length ; i++){
+        if ( $.inArray(t[i].WorkProduct.ObjectID, teamStories) == "-1"){
+            teamStories.push(t[i].WorkProduct.ObjectID);
+        }    
+    }
+
+    for (i = 0; i < teamStories.length ; i++){
+        var storyDataUrl = getData("/hierarchicalrequirement/" + teamStories[i]);
+        storyDataUrl.success(function (data, textStatus, jqXHR) {
+            
+            if (data.HierarchicalRequirement == undefined){
+                errors++;
+            }
+
+            if (data.HierarchicalRequirement != undefined){
+
+                var temp = {
+                    formattedID : data.HierarchicalRequirement.FormattedID,
+                    planEstimate : data.HierarchicalRequirement.PlanEstimate,
+                    planActual: data.HierarchicalRequirement.PlanEstimate,
+                    acceptedDate: data.HierarchicalRequirement.AcceptedDate
+                }
+                maxPoints += data.HierarchicalRequirement.PlanEstimate;
+                _MAXHOURS = maxPoints;
+                storiesProcessed++;
+
+                //only keep stories that have been accepted
+                if (data.HierarchicalRequirement.AcceptedDate != null)
+                    teamStoryData.push(temp);
+
+                //we're done - sort then process
+                if ((teamStories.length-errors) === storiesProcessed){
+                    teamStoryData.sort(function(x, y) {
+                        return convertIsoDate(x.acceptedDate) - convertIsoDate(y.acceptedDate);
+                    });
+
+                    var totalPoints = countStoryPoints(teamStoryData);
+                    var totalHours = countTaskHours(t);
+                    var pointsToHours = (totalHours/maxPoints).toFixed(2);
+
+                    _MAXPOINTS = totalHours;
+                    
+                    $('#totalHours').html('<strong>Total Hours:</strong> ' + totalHours);
+                    $('#maxPoints').html('<strong>Total Points:</strong> ' + maxPoints);
+                    
+                    //convertHours(pointsToHours, teamStoryData);
+                    draw(t, teamStoryData);
+
+                }
+            }
+        });
+    }
+
+    function countStoryPoints(a){
+        var count = 0;
+        for (i = 0; i < a.length ; i++){
+            count += a[i].planEstimate;
+        }
+        return count;
+    }
+
+    function countTaskHours(t){
+        var count = 0;
+        for (i = 0; i < t.length ; i++){
+            count += t[i].Estimate;
+        }
+        return count;
+    }
+
+    function convertHours(ratio, a){
+        for (i = 0; i < a.length ; i++){
+            a[i].planEstimate *= ratio;
+        }
+    }
+}
+
+function showWait(message) {
+    RALLY.Mashup.Utilities.showWait("spinner_div", ["chart_div", "table_div", "myLegend"]);
+    var spinner = document.getElementById("spinner_div").innerHTML;
+    document.getElementById("spinner_div").innerHTML = spinner + " " + message;
+}
+
+
+function hideWait() {
+    RALLY.Mashup.Utilities.hideWait("spinner_div", ["chart_div", "myLegend", "table_div"]);
+}
+
+function getAvailableWidth() {
+    var browserWidth = document.body.clientWidth || window.innerWidth;
+    if ("__width__" !== "__w" + "idth__") {
+        return "__width__";
+    } else {
+        return browserWidth;
+    }
+}
+
+function getData(call) {
+    var url = "https://rally1.rallydev.com/slm/webservice/v2.0"+call;
+    console.log(url);
+    return $.ajax({
+        url: url,
+        xhrFields: {withCredentials: true}
+    });
+}
+
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+<style type="text/css">
+    body {
+        background: white;
+    }
+    .lbl {
+        text-align: left;
+        white-space: nowrap;
+        font-size: 13px;
+    }
+    td {
+        font-size: 11px;
+    }
+    .tableRow {
+        background: white;
+        border-bottom: 1px solid #dddddd;
+        border-top: 0px;
+    }
+    .tableCell {
+        border-bottom: 1px solid #dddddd;
+        border-top: 0px;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+    .headerRow {
+        color: #076692;
+        background: #eeeeee;
+    }
+    .headerCell {
+        border-left: 1px solid #ffffff;
+        text-align: left;
+        border-top: 0px;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+    .state {
+        text-align: center;
+        width: 14px;
+        color: #ffffff;
+        background-color: #006600;
+    }
+    .blocked {
+        text-align: center;
+        width: 16px;
+        color: #ffffff;
+        background-color: transparent;
+        background-image: url(../images/icon_blocked.gif);
+        background-attachment: scroll;
+        background-repeat: no-repeat;
+        background-position: center center;
+    }
+    #myLegend{
+        position: absolute;
+        right: 25%;
+        top: 30%;
+        border: 1px solid;
+        padding: .5rem;
+        background: #fff;
+        visibility:hidden;
+    }
+    #totalHours{
+        margin-bottom:.5rem;
+    }
+    #chart_div{
+        width:100%!important;
+    }
+</style>
+</head>
+<body>
+<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Burndown</div>
+<div id="print_div" style="display: none;">
+    <table>
+        <tr>
+            <td style="text-align: left; width: 99%;">
+            <td style="text-align: right; width: 1%;">
+                <img id="do" onmouseover="RALLY.Mashup.Utilities.showcbButton();"
+                     onmouseout="hidecbMenu('buttons',event);" style="vertical-align: middle;"
+                     src="https://rally1.rallydev.com/slm/images/menu_actions.gif"/>
+
+                <div style="position:relative;top:5px" align="left">
+                    <div id="buttons" class="do-menu" style="left:0px;"
+                         onmouseover="document.body.style.cursor='pointer';"
+                         onmouseout="document.body.style.cursor='default';hidecbMenu('buttons',event);">
+                        <a id="print" onclick="RALLY.Mashup.Utilities.printPage()">Print...</a>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+<div style="clear: both;"></div>
+<div>
+    <table width="100%">
+        <tr>
+            <td style="vertical-align: top;">
+                <table>
+                    <tr>
+                        <td id="timeboxLabel" class="lbl">Team Members</td>
+                        <!-- <td><select id="timeboxList"></select></td> -->
+                        <td><select id="teamList"></select></td>
+                        <td nowrap>
+                            <div id="dates_div" style="margin-left: 10px"></div>
+                        </td>
+                </table>
+                <br/>
+
+                <div id="spinner_div" style="clear: both;"></div>
+                <div id="chart_div" class="chart" style="width:100%; height: 200px;"></div>
+            </td>
+        </tr>
+    </table>
+</div>
+<div>
+    <div id="myLegend">
+        <div id="totalHours"></div>
+        <div id="maxPoints"></div>
+    </div>
+    <table width="100%">
+        <tr>
+            <td style="vertical-align: top; width: 100%">
+                <br/>
+
+                <div id="table_div" style="margin-left: 20px;"></div>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
