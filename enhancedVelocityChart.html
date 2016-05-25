@@ -559,19 +559,19 @@
                     dojo.hitch(this, this.handleLoad));
         };
         this.handleLoad = function(results) {
-            console.log(results);
+            console.log(this);
             this.planEstimateLabel = results.planEstUnit[0].IterationEstimateUnitName;
             _afterState = results.scheduleStates[results.scheduleStates.length - 1];
 
             try {
                 this.parseProjectIterations(results.prev_iterations);
             } catch(e) {
-                this.postException(e);
+            this.postException(e);
             }
 
             for (var i = 0; i < this.iterations.length; i++) {
                 var projIteration = this.iterations[i];
-                //console.log(projIteration);
+                console.log(projIteration);
                 try {
                     projIteration.load(dojo.hitch(this, this.ready));
                 } catch(e) {
