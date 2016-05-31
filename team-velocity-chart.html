@@ -174,14 +174,20 @@ function processResults(results){
 
     for (i = 0; i < results.tasks.length; i++)
         thisIterationTasks.push(results.tasks[i]);
+    
+    if ( thisIterationTasks.length == 0 )
+         ITERATIONS_WORKED--;
 
-    //console.log(thisIterationTasks);
-    processStoryPoints(thisIterationTasks);
+    //console.log("thisIterationTasks");
+    //console.log(thisIterationTasks.length);
+    if (thisIterationTasks.length > 0 )
+        processStoryPoints(thisIterationTasks);
 }
 
 function processStoryPoints(t){
     console.log("processing iteration story points");
-    //console.log(t);
+    console.log("this iterations tasks");
+    console.log(t);
 
     var stories = [];
     var storyData = [];
@@ -190,8 +196,8 @@ function processStoryPoints(t){
     var errors = 0;
     var maxPoints = 0;
 
-    if ( t.length == 0 )
-        ITERATIONS_WORKED--;
+    // if ( t.length == 0 )
+    //     ITERATIONS_WORKED--;
 
     for (i = 0; i < t.length ; i++){
         //only need unique story id's
@@ -199,6 +205,9 @@ function processStoryPoints(t){
             stories.push(t[i].WorkProduct.ObjectID);
         }
     }
+
+    console.log("stories");
+    console.log(stories.length);
 
     for (i = 0; i < stories.length ; i++){
         var storyDataUrl = getData("/hierarchicalrequirement/" + stories[i]);
@@ -209,6 +218,7 @@ function processStoryPoints(t){
 
             //processing stories
             if (data.HierarchicalRequirement != undefined){
+                console.log("processing");
                 var temp = {
                     formattedID : data.HierarchicalRequirement.FormattedID,
                     planEstimate : data.HierarchicalRequirement.PlanEstimate,
@@ -225,8 +235,17 @@ function processStoryPoints(t){
                      storyData.push(temp);
             }
 
+            // console.log("stories.length");
+            // console.log(stories.length);
+            // console.log("errors");
+            // console.log(errors);
+            // console.log("storiesProcessed");
+            // console.log(storiesProcessed);
+
             //we're done with this iteration - sort then process
-            if ((stories.length-errors) === storiesProcessed){
+            if ( ((stories.length-errors) === storiesProcessed) && (storyData.length > 0) ){
+                console.log("storyData");
+                console.log(storyData);
                 storyData.sort(function(x, y) {
                     return convertIsoDate(x.acceptedDate) - convertIsoDate(y.acceptedDate);
                 });
@@ -247,13 +266,16 @@ function processStoryPoints(t){
                 //draw(t, teamStoryData);
 
                 //ITERATION_DATA.push({thisIteration, maxPoints, acceptedPoints});
-                ITERATION_DATA1.push([ thisIteration, maxPoints]);
+                ITERATION_DATA1.push([ thisIteration, maxPoints - acceptedPoints]);
                 ITERATION_DATA2.push([ thisIteration, acceptedPoints]);
                 ITERATIONS_PROCESSED++
             }
+            // else if (storyData == 0){
+            //     ITERATIONS_PROCESSED++
+            // }
 
-            // console.log(ITERATIONS_PROCESSED);
-            // console.log(ITERATIONS_WORKED);
+            console.log(ITERATIONS_PROCESSED);
+            console.log(ITERATIONS_WORKED);
 
             //we done with all iterations woked - sort then process
             if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
@@ -430,31 +452,57 @@ function draw(total, accepted) {
         },
         axis_left:{
             min_extreme:0.0,
-            caption: "Plan Estimates"
+            caption: "Plan Estimates",
+            major_ticks: {
+               show: true,
+               //max_interval: intervalHours            
+            },
+            formatter: new EJSC.NumberFormatter({variable_decimals: 0 }),
+            visible: true
         }
     });
+
+    velocityChart.onShowHint = function(point, series, chart, hint, hoverOrSelect) {
+        if (series.title.indexOf('Not Accepted') >= 0)
+            return 'Not Accepted: ' + Math.round(point.y * 100) / 100 + ' hours';
+        else if (series.title.indexOf('Accepted') >= 0)
+            return 'Accepted: ' + Math.round(point.y * 100) / 100 + ' hours';
+    };
+
+    var sbSeries = velocityChart.addSeries(
+        new EJSC.StackedBarSeries(
+            {
+                autosort: false,
+                show_title: false,
+                title: "Estimates vs Accepted",
+                intervalOffset: 0.7,
+                groupedBars: false
+            }
+    ));
+
     var series1 = new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(total), 
         {
             // autosort: false, 
             groupedBars:false,
-            title: "Total Hours",
-            color: "#B2E3B6",
+            title: "Not Accepted",
+            color: "#AAA",
             opacity: 100,
-            lineWidth: 1
+            lineWidth: 1,
+            opacity: 1
         });
     var series2 = new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(accepted), 
         {
             // autosort: false, 
             groupedBars:false,
-            title: "To Do",
+            title: "Accepted",
             color: "#3A874F",
             opacity: 100,
             lineWidth: 1
         });
-    velocityChart.addSeries(series1);
-    velocityChart.addSeries(series2);
+    sbSeries.addSeries(series2);
+    sbSeries.addSeries(series1);
 
     hideWait();
 }
@@ -573,7 +621,7 @@ function draw(total, accepted) {
             <td style="vertical-align: top;">
                 <table>
                     <tr>
-                        <td id="timeboxLabel" class="lbl">Team Members</td>
+                        <td id="timeboxLabel" class="lbl">Team Members</td> 
                         <!-- <td><select id="timeboxList"></select></td> -->
                         <td><select id="teamList"><option val="">Select</option></select></td>
                         <td nowrap>
