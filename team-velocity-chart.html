@@ -157,11 +157,6 @@ function runIndQuery(i, a){
              order: "Rank",
              query: "((Iteration.Name = \"" + i[n].Name + "\") AND (Owner = \"" + a + "\"))"
         };
-        // batchToolkit.findAll(taskQuery, 
-        //     function(results){ 
-        //         processResults(results); 
-        //     }
-        // );
         batchToolkit.findAll(taskQuery, processResults);
     }
 }
@@ -206,8 +201,8 @@ function processStoryPoints(t){
         }
     }
 
-    console.log("stories");
-    console.log(stories.length);
+    //console.log("stories");
+    //console.log(stories);
 
     for (i = 0; i < stories.length ; i++){
         var storyDataUrl = getData("/hierarchicalrequirement/" + stories[i]);
@@ -215,10 +210,11 @@ function processStoryPoints(t){
             if (data.HierarchicalRequirement == undefined){
                 errors++;
             }
+            console.log("processing this iterations stories");
+            console.log(data.HierarchicalRequirement);
 
             //processing stories
             if (data.HierarchicalRequirement != undefined){
-                console.log("processing");
                 var temp = {
                     formattedID : data.HierarchicalRequirement.FormattedID,
                     planEstimate : data.HierarchicalRequirement.PlanEstimate,
@@ -231,7 +227,7 @@ function processStoryPoints(t){
                 storiesProcessed++;
 
                 //only keep stories that have been accepted
-                if (data.HierarchicalRequirement.AcceptedDate != null)
+                //if (data.HierarchicalRequirement.AcceptedDate != null)
                      storyData.push(temp);
             }
 
@@ -244,29 +240,33 @@ function processStoryPoints(t){
 
             //we're done with this iteration - sort then process
             if ( ((stories.length-errors) === storiesProcessed) && (storyData.length > 0) ){
+                console.log("we're done with this iterations stories");
                 console.log("storyData");
                 console.log(storyData);
-                storyData.sort(function(x, y) {
-                    return convertIsoDate(x.acceptedDate) - convertIsoDate(y.acceptedDate);
-                });
+                // storyData.sort(function(x, y) {
+                //     return convertIsoDate(x.acceptedDate) - convertIsoDate(y.acceptedDate);
+                // });
 
-                var acceptedPoints = countStoryPoints(storyData);
+                var acceptedPoints = countAcceptedPoints(storyData);
+                console.log("acceptedPoints");
+                console.log(acceptedPoints);
+
+                var totalPoints = countStoryPoints(storyData);
+                console.log("totalPoints");
+                console.log(totalPoints);
+
                 var totalHours = countTaskHours(t);
+                console.log("totalHours");
+                console.log(totalHours);
+
                 var thisIteration = storyData[0].iteration;
+                console.log("thisIteration");
+                console.log(totalHours);                
                 //var pointsToHours = (totalHours/maxPoints).toFixed(2);
 
                 //_MAXPOINTS = totalHours;
-                
-                //$('#totalHours').html('<strong>Total Hours:</strong> ' + totalHours);
-                //$('#maxPoints').html('<strong>Total Points:</strong> ' + maxPoints);
-                
-                //console.log("storyData");
-                //console.log(totalPoints);
-                //convertHours(pointsToHours, teamStoryData);
-                //draw(t, teamStoryData);
-
-                //ITERATION_DATA.push({thisIteration, maxPoints, acceptedPoints});
-                ITERATION_DATA1.push([ thisIteration, maxPoints - acceptedPoints]);
+    
+                ITERATION_DATA1.push([ thisIteration, totalPoints - acceptedPoints]);
                 ITERATION_DATA2.push([ thisIteration, acceptedPoints]);
                 ITERATIONS_PROCESSED++
             }
@@ -274,8 +274,12 @@ function processStoryPoints(t){
             //     ITERATIONS_PROCESSED++
             // }
 
-            console.log(ITERATIONS_PROCESSED);
-            console.log(ITERATIONS_WORKED);
+            // console.log("storiesProcessed");
+            // console.log(storiesProcessed);
+            // console.log("ITERATIONS_PROCESSED");
+            // console.log(ITERATIONS_PROCESSED);
+            // console.log("ITERATIONS_WORKED");
+            // console.log(ITERATIONS_WORKED);
 
             //we done with all iterations woked - sort then process
             if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
@@ -293,6 +297,15 @@ function processStoryPoints(t){
             }
             
         });
+    }
+
+    function countAcceptedPoints(a){
+        var count = 0;
+        for (i = 0; i < a.length ; i++){
+            if (a[i].acceptedDate != null)
+                count+= a[i].planEstimate;
+        }
+        return count;
     }
 
     function countStoryPoints(a){
@@ -593,7 +606,7 @@ function draw(total, accepted) {
 </style>
 </head>
 <body>
-<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Burndown</div>
+<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Velocities</div>
 <div id="print_div" style="display: none;">
     <table>
         <tr>
