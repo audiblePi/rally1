@@ -36,6 +36,7 @@ Team Velocities Psuedo Code
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/slm.css" charset="utf-8"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/sprites.css" charset="utf-8"/>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 <script type="text/javascript" src="https://rally1.rallydev.com/slm/js/slm.js"></script>
 <script type="text/javascript" src="https://rally1.rallydev.com/slm/js-lib/dojo/1.3.1/dojo/dojo.js"></script>
 <script type="text/javascript" src="https://rally1.rallydev.com/apps/1.33/lib/ejsc/EJSChart.js"></script>
@@ -45,6 +46,7 @@ Team Velocities Psuedo Code
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <!--<script type="text/javascript" src="https://subversion.bcbsfl.com/repos/crm/uxt/lib/trunk/foundation/5.5.0/js/vendor/jquery.js"></script>-->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script type="text/javascript">
 google.load("visualization", "1", {packages:["table"]});
 dojo.require("dojo.date.stamp");
@@ -66,7 +68,6 @@ var TEAM_MEMBERS;
 var CURRENT_TEAM_MEMBER = 0;
 var TEAM_NOT_ACCEPTED = [];
 var TEAM_ACCEPTED = [];
-
 
 //var numTeamMemebers;
 
@@ -95,7 +96,10 @@ function initPage() {
     }
     document.getElementById("title_div").style.display = "block";
     document.getElementById("print_div").style.display = "block";
-    runTeamMemberQuery();
+    
+    $(".start").on("click", function(){runTeamMemberQuery(); });
+    $(".stop").on("click", function(){ stop(); });
+    $( "#progressbar" ).progressbar({value: 1, max: 100 });
 }
 
 function runTeamMemberQuery() {
@@ -160,7 +164,9 @@ function runIterationQuery(a){
 
 function runIndQuery(i, a){
     //console.log("running individual query");
-    showWait("<em>Loading chart...</em>");
+    var percent = (((CURRENT_TEAM_MEMBER + 1 )/TEAM_MEMBERS.length)*100).toFixed(0);
+    $( "#progressbar" ).progressbar( "value", Number(percent) );
+    showWait("<em>Loading... "+a+"</em>");
 
     for (n = 0; n < 10 ; n++) {
         //console.log( i[n].Name );
@@ -338,6 +344,8 @@ function processStoryPoints(t){
 
 function areWeDone(){
     console.log("areWeDone?");
+    console.log(ITERATIONS_PROCESSED);
+    console.log(ITERATIONS_WORKED);
     //we done with all iterations woked - sort then process
     if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
         console.log("we're done");
@@ -374,6 +382,9 @@ function areWeDone(){
         //console.log(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
         //draw(ITERATION_DATA1, ITERATION_DATA2);
     }
+}
+function stop(){
+    //break;
 }
 
 
@@ -677,9 +688,11 @@ function draw(total, accepted) {
             <td style="vertical-align: top;">
                 <table>
                     <tr>
-                        <td id="timeboxLabel" class="lbl">Team Members</td> 
+                        <td id="timeboxLabel" class="lbl"><button class="start">Start</button></td> 
+                        <td id="timeboxLabel" class="lbl"><button class="stop">Stop</button></td> 
+                        <td width="100px"><div id="progressbar"><span></div>
                         <!-- <td><select id="timeboxList"></select></td> -->
-                        <td><select id="teamList"><option val="">Select</option></select></td>
+                        <!-- <td><select id="teamList"><option val="">Select</option></select></td> -->
                         <td nowrap>
                             <div id="dates_div" style="margin-left: 10px"></div>
                         </td>
