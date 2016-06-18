@@ -163,7 +163,7 @@ function runIndQuery(i, a){
     showWait("<em>Loading chart...</em>");
 
     for (n = 0; n < 10 ; n++) {
-        console.log( i[n].Name );
+        //console.log( i[n].Name );
 
         var taskQuery = {
              key: "tasks",
@@ -192,6 +192,10 @@ function processResults(results){
     //console.log(thisIterationTasks.length);
     if (thisIterationTasks.length > 0 )
         processStoryPoints(thisIterationTasks);
+    else if (ITERATIONS_WORKED == ITERATIONS_PROCESSED && ITERATIONS_WORKED == 0){
+        console.log("no iterations worked");
+        areWeDone();
+    }
 }
 
 function processStoryPoints(t){
@@ -296,43 +300,7 @@ function processStoryPoints(t){
             // console.log("ITERATIONS_WORKED");
             // console.log(ITERATIONS_WORKED);
 
-            //we done with all iterations woked - sort then process
-            if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
-                console.log("we're done");
-                //console.log(ITERATIONS_PROCESSED);
-
-                CURRENT_TEAM_MEMBER++;
-                console.log(CURRENT_TEAM_MEMBER);
-                console.log(TEAM_MEMBERS.length);
-
-                ITERATION_DATA1.sort(function(x, y) {
-                    return x[0].localeCompare(y[0]);
-                });
-
-                ITERATION_DATA2.sort(function(x, y) {
-                    return x[0].localeCompare(y[0]);
-                });
-
-                console.log(ITERATION_DATA1, ITERATION_DATA2);
-                
-                // $.each(ITERATION_DATA1, function (index){
-                //     TEAM_NOT_ACCEPTED[index][1] += ITERATION_DATA1[index][1];
-                // });
-
-                // $.each(ITERATION_DATA2, function (index){
-                //     TEAM_ACCEPTED[index][1] += ITERATION_DATA2[index][1];
-                // });
-
-                TEAM_NOT_ACCEPTED.push(ITERATION_DATA1);
-                TEAM_ACCEPTED.push(ITERATION_DATA2);
-
-                runSelect();
-
-                //console.log(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
-
-                //draw(ITERATION_DATA1, ITERATION_DATA2);
-            }
-            
+            areWeDone();            
         });
     }
 
@@ -368,7 +336,45 @@ function processStoryPoints(t){
     }
 }
 
+function areWeDone(){
+    console.log("areWeDone?");
+    //we done with all iterations woked - sort then process
+    if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
+        console.log("we're done");
+        //console.log(ITERATIONS_PROCESSED);
 
+        CURRENT_TEAM_MEMBER++;
+        console.log(CURRENT_TEAM_MEMBER);
+        console.log(TEAM_MEMBERS.length);
+
+        ITERATION_DATA1.sort(function(x, y) {
+            return x[0].localeCompare(y[0]);
+        });
+
+        ITERATION_DATA2.sort(function(x, y) {
+            return x[0].localeCompare(y[0]);
+        });
+
+        //console.log(ITERATION_DATA1, ITERATION_DATA2);
+        // $.each(ITERATION_DATA1, function (index){
+        //     TEAM_NOT_ACCEPTED[index][1] += ITERATION_DATA1[index][1];
+        // });
+        // $.each(ITERATION_DATA2, function (index){
+        //     TEAM_ACCEPTED[index][1] += ITERATION_DATA2[index][1];
+        // });
+
+        TEAM_NOT_ACCEPTED.push(ITERATION_DATA1);
+        TEAM_ACCEPTED.push(ITERATION_DATA2);
+
+        if (CURRENT_TEAM_MEMBER == TEAM_MEMBERS.length )
+            console.log("we're done processing team member");
+        else
+            runSelect();
+        
+        //console.log(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
+        //draw(ITERATION_DATA1, ITERATION_DATA2);
+    }
+}
 
 
 

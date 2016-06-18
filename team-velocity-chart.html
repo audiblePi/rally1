@@ -162,8 +162,8 @@ function runIndQuery(i, a){
 }
 
 function processResults(results){
-    console.log("processing interation tasks");
-    console.log(results);
+    //console.log("processing interation tasks");
+    //console.log(results);
     
     var thisIterationTasks = [];
 
@@ -186,7 +186,7 @@ function processResults(results){
         processStoryPoints(thisIterationTasks);
     }
     else if (ITERATIONS_WORKED == ITERATIONS_PROCESSED && ITERATIONS_WORKED == 0){
-        console.log("no iterations worked");
+        //console.log("no iterations worked");
         hideWait();
         $("#chart_div").html("No iterations worked...");
     }
