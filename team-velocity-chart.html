@@ -29,8 +29,8 @@ Team Velocities Psuedo Code
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>Digital UX Team Velocities</title>
-<meta name="Name" content="App: Digital UX Team Velocities"/>
+<title>UI Team Velocities</title>
+<meta name="Name" content="App: UI Team Velocities"/>
 <meta name="Version" content="1.0"/>
 <meta name="Vendor" content="Brian Hicks"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
@@ -49,6 +49,10 @@ Team Velocities Psuedo Code
 google.load("visualization", "1", {packages:["table"]});
 dojo.require("dojo.date.stamp");
 dojo.addOnLoad(initPage);
+
+//var _PROJ_ID = "25758763437"; //Digital UX
+var _PROJ_ID = "60242551414"; //UI Dev
+
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
@@ -94,7 +98,10 @@ function initPage() {
 
 function runTeamMemberQuery() {
     //console.log("running team member query");
-    var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
+    var q = "/Project/" + _PROJ_ID + "/TeamMembers";
+    var teamMemberQuery = getData(q);
+
+    //var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
     var teamMembers;
     teamMemberQuery.success(function (data) {
         teamMembers = data.QueryResult.Results;
@@ -173,23 +180,10 @@ function processResults(results){
     if ( thisIterationTasks.length == 0 )
          ITERATIONS_WORKED--;
 
-    // console.log("thisIterationTasks");
-    // console.log(thisIterationTasks.length);
-
-    // console.log("ITERATIONS_WORKED");
-    // console.log(ITERATIONS_WORKED);
-    
-    // console.log("ITERATIONS_PROCESSED");
-    // console.log(ITERATIONS_PROCESSED);
-    
-    if (thisIterationTasks.length > 0 ){
+    //console.log("thisIterationTasks");
+    //console.log(thisIterationTasks.length);
+    if (thisIterationTasks.length > 0 )
         processStoryPoints(thisIterationTasks);
-    }
-    else if (ITERATIONS_WORKED == ITERATIONS_PROCESSED && ITERATIONS_WORKED == 0){
-        //console.log("no iterations worked");
-        hideWait();
-        $("#chart_div").html("No iterations worked...");
-    }
 }
 
 function processStoryPoints(t){
@@ -619,7 +613,7 @@ function draw(total, accepted) {
 </style>
 </head>
 <body>
-<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Velocities</div>
+<div class="titlebar" style="float: left; display: none;" id="title_div">UI Team Velocities</div>
 <div id="print_div" style="display: none;">
     <table>
         <tr>

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>Digital UX Team Personal Burndowns</title>
-<meta name="Name" content="App: Team Personal Burndowns"/>
+<title>UI Team Personal Burndowns</title>
+<meta name="Name" content="App: UI Team Personal Burndowns"/>
 <meta name="Version" content="1.0"/>
 <meta name="Vendor" content="Brian Hicks"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
@@ -20,6 +20,10 @@
 <script type="text/javascript">
 google.load("visualization", "1", {packages:["table"]});
 dojo.addOnLoad(initPage);
+
+//var _PROJ_ID = "25758763437"; //Digital UX
+var _PROJ_ID = "60242551414"; //UI Dev
+
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
@@ -146,13 +150,13 @@ function drawChart(startDate, endDate, results) {
     var randomNum = Math.floor((Math.random() * 100) + 1);
     var thisDivId = "this-div-" + randomNum.toString();
     var thisChartDiv = document.createElement("DIV");
-    var chartWidth = Math.floor(getAvailableWidth() * 0.90) - 5;
+    var chartWidth = Math.floor(getAvailableWidth() * 0.50) - 5;
     var thisChartDivTitle = document.createElement("H1");
       
     thisChartDivTitle.innerHTML = results.tasks[0].Owner._refObjectName;
     thisChartDiv.setAttribute("id", thisDivId);
     thisChartDiv.setAttribute("class", "chart");
-    thisChartDiv.setAttribute("style", "width: "+chartWidth+"; height: 200px;");
+    thisChartDiv.setAttribute("style", "width: 100%; height: 200px;");
 
     //console.log(thisChartDiv);
     //console.log(thisChartDivTitle);
@@ -354,7 +358,9 @@ function formatDate(date) {
 function runMainQuery() {
     //console.log("running main query");
     //console.log("__USER_NAME__");
-    var teamMemberQuery = getTeamMembers("/Project/25758763437/TeamMembers");
+    //var teamMemberQuery = getTeamMembers("/Project/25758763437/TeamMembers");
+    var q = "/Project/" + _PROJ_ID + "/TeamMembers";
+    var teamMemberQuery = getTeamMembers(q);
     var teamMembers;
     $('#chart_div').empty();
     teamMemberQuery.success(function (data) {
@@ -498,7 +504,7 @@ function getTeamMembers(call) {
 </style>
 </head>
 <body>
-<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Personal Burndowns</div>
+<div class="titlebar" style="float: left; display: none;" id="title_div">UI Team Personal Burndowns</div>
 <div id="print_div" style="display: none;">
     <table>
         <tr>
@@ -535,7 +541,7 @@ function getTeamMembers(call) {
             <br/>
 
             <div id="spinner_div" style="clear: both;"></div>
-            <div id="chart_div" class="chart" style="width: 400px; height: 200px;"></div>
+            <div id="chart_div" class="chart"></div>
         </td>
         <td style="vertical-align: top; width: 100%">
             <br/>

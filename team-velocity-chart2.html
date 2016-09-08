@@ -29,7 +29,7 @@ Team Velocities Psuedo Code
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>Digital UX Team Burndown</title>
+<title>UI Team Burndown</title>
 <meta name="Name" content="App: Digital UX Team Burndown"/>
 <meta name="Version" content="1.0"/>
 <meta name="Vendor" content="Brian Hicks"/>
@@ -51,6 +51,10 @@ Team Velocities Psuedo Code
 google.load("visualization", "1", {packages:["table"]});
 dojo.require("dojo.date.stamp");
 dojo.addOnLoad(initPage);
+
+//var _PROJ_ID = "25758763437"; //Digital UX
+var _PROJ_ID = "60242551414"; //UI Dev
+
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
@@ -99,12 +103,16 @@ function initPage() {
     
     $(".start").on("click", function(){runTeamMemberQuery(); });
     $(".stop").on("click", function(){ stop(); });
-    $( "#progressbar" ).progressbar({value: 1, max: 100 });
 }
 
 function runTeamMemberQuery() {
     //console.log("running team member query");
-    var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
+    $( "#progressbar" ).progressbar({value: 1, max: 100 });
+    //var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
+    //var teamMemberQuery = getData("/Project/60242551414/TeamMembers");
+    var q = "/Project/" + _PROJ_ID + "/TeamMembers";
+    var teamMemberQuery = getData(q);
+
     teamMemberQuery.success(function (data) {
         TEAM_MEMBERS = data.QueryResult.Results;
         //console.log(teamMembers);
@@ -293,7 +301,13 @@ function processStoryPoints(t){
     
                 ITERATION_DATA1.push([ thisIteration, totalPoints - acceptedPoints]);
                 ITERATION_DATA2.push([ thisIteration, acceptedPoints]);
-                ITERATIONS_PROCESSED++
+
+                // console.log("ITERATIONS_PROCESSED");
+                // console.log(ITERATIONS_PROCESSED);
+                // console.log("ITERATIONS_WORKED");
+                // console.log(ITERATIONS_WORKED);
+
+                ITERATIONS_PROCESSED++;
             }
             // else if (storyData == 0){
             //     ITERATIONS_PROCESSED++
@@ -363,7 +377,7 @@ function areWeDone(){
             return x[0].localeCompare(y[0]);
         });
 
-        //console.log(ITERATION_DATA1, ITERATION_DATA2);
+        console.log(ITERATION_DATA1, ITERATION_DATA2);
         // $.each(ITERATION_DATA1, function (index){
         //     TEAM_NOT_ACCEPTED[index][1] += ITERATION_DATA1[index][1];
         // });
@@ -374,13 +388,17 @@ function areWeDone(){
         TEAM_NOT_ACCEPTED.push(ITERATION_DATA1);
         TEAM_ACCEPTED.push(ITERATION_DATA2);
 
-        if (CURRENT_TEAM_MEMBER == TEAM_MEMBERS.length )
+        if (CURRENT_TEAM_MEMBER == TEAM_MEMBERS.length ){
             console.log("we're done processing team member");
+            
+            //console.log(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
+            //draw(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
+            //draw(ITERATION_DATA1, ITERATION_DATA2);
+        }
         else
             runSelect();
         
-        //console.log(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
-        //draw(ITERATION_DATA1, ITERATION_DATA2);
+        
     }
 }
 function stop(){
@@ -660,7 +678,7 @@ function draw(total, accepted) {
 </style>
 </head>
 <body>
-<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Velocity</div>
+<div class="titlebar" style="float: left; display: none;" id="title_div">UI Team Velocity</div>
 <div id="print_div" style="display: none;">
     <table>
         <tr>
@@ -689,7 +707,7 @@ function draw(total, accepted) {
                 <table>
                     <tr>
                         <td id="timeboxLabel" class="lbl"><button class="start">Start</button></td> 
-                        <td id="timeboxLabel" class="lbl"><button class="stop">Stop</button></td> 
+                        <!-- <td id="timeboxLabel" class="lbl"><button class="stop">Stop</button></td> --> 
                         <td width="100px"><div id="progressbar"><span></div>
                         <!-- <td><select id="timeboxList"></select></td> -->
                         <!-- <td><select id="teamList"><option val="">Select</option></select></td> -->

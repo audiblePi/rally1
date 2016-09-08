@@ -1,8 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>Digital UX Team Burndown</title>
-<meta name="Name" content="App: Digital UX Team Burndown"/>
+<title>UI Dev Team Burndown</title>
+<meta name="Name" content="App: UI Dev Team Burndown"/>
 <meta name="Version" content="1.0"/>
 <meta name="Vendor" content="Brian Hicks"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
@@ -20,6 +20,10 @@
 <script type="text/javascript">
 google.load("visualization", "1", {packages:["table"]});
 dojo.addOnLoad(initPage);
+
+//var _PROJ_ID = "25758763437"; //Digital UX
+var _PROJ_ID = "60242551414"; //UI Dev
+
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
@@ -31,6 +35,7 @@ var tasksProcessed;
 var numTeamMemebers;
 var _MAXHOURS;
 var _MAXPOINTS;
+
 
 
 
@@ -313,7 +318,7 @@ function drawChart(startDate, endDate, results, storyArray) {
     todoArray.splice(8, 2);
     var newTodoArray = [];
 
-    newTodoArray.push([dayBefore, totalEstimate]);
+    //newTodoArray.push([dayBefore, totalEstimate]);
 
     for (var i = 0; i < todoArray.length; i++) {
         var newdate = reFormatDate(todoArray[i][0]);
@@ -324,7 +329,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         newTodoArray.push(temp);
     }
     // console.log("newTodoArray");
-    // console.log(newTodoArray);
+     console.log(newTodoArray);
     burndownChart.addSeries(new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(newTodoArray),
         {
@@ -396,7 +401,7 @@ function drawChart(startDate, endDate, results, storyArray) {
     var t;
     var newdate2;
 
-    idealArray.push([dayBefore, totalEstimate]);
+    //idealArray.push([dayBefore, totalEstimate]);
 
     for (t = 0; t < 14; t++) {
         if ( (t > 2 && t < 5) || (t > 9 && t < 12) ){
@@ -468,7 +473,8 @@ function formatDate(date) {
 
 function runMainQuery() {
     //console.log("running main query");
-    var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
+    var q = "/Project/" + _PROJ_ID + "/TeamMembers";
+    var teamMemberQuery = getData(q);
     var teamMembers;
     teamMemberQuery.success(function (data) {
         teamMembers = data.QueryResult.Results;
@@ -495,7 +501,7 @@ function runTeamQuery(a){
     //console.log(a.length);
     numTeamMemebers = a.length;
     for (i = 0; i < a.length ; i++) {
-        console.log(a[i].UserName);
+        //console.log(a[i].UserName);
         var taskQuery = {
             key: "tasks",
             type: "Task",
@@ -744,7 +750,7 @@ function getData(call) {
 </style>
 </head>
 <body>
-<div class="titlebar" style="float: left; display: none;" id="title_div">Digital UX Team Burndown</div>
+<div class="titlebar" style="float: left; display: none;" id="title_div">UI Dev Team Burndown</div>
 <div id="print_div" style="display: none;">
     <table>
         <tr>
