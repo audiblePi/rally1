@@ -21,21 +21,20 @@
 google.load("visualization", "1", {packages:["table"]});
 dojo.addOnLoad(initPage);
 
-//var _PROJ_ID = "25758763437"; //Digital UX
-var _PROJ_ID = "60242551414"; //UI Dev
+var webAndMobile = "16732622451";
+var digitalUX = "25758763437";
+var uiDev = "60242551414";
 
+var _PROJ_ID = uiDev;
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
 var widgetMode;
-//var burndownChart;
 var ONE_DAY = 1000 * 60 * 60 * 24;
 var DEBUG = false;
 
 
 function draw(results) {
-    // console.log('drawing results');
-    // console.log(results);
     var startDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedStart());
     startDate.setHours(23);
     startDate.setMinutes(59);
@@ -51,14 +50,9 @@ function draw(results) {
     drawChart(startDate, endDate, results);
 }
 
-
 function drawTable(results) {
-    //console.log("drawing table");
-    //console.log(results.tasks.length);
-    if (results.tasks.length == 0) {
-
+    if (results.tasks.length == 0)
         return;
-    }
 
     var css = {
         "headerRow": "headerRow",
@@ -120,10 +114,8 @@ function drawTable(results) {
     data.setColumnLabel(column - 2, "Actuals<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + totalActuals);
     var table = new google.visualization.Table(document.getElementById("table_div"));
     table.draw(data, options);
-    //console.log(data);
     hideWait();
 }
-
 
 function by(property) {
     return function(o, p) {
@@ -142,11 +134,7 @@ function by(property) {
     };
 }
 
-
 function drawChart(startDate, endDate, results) {
-    //console.log("drawing chart");
-    //console.log(results.tasks);
-
     var randomNum = Math.floor((Math.random() * 100) + 1);
     var thisDivId = "this-div-" + randomNum.toString();
     var thisChartDiv = document.createElement("DIV");
@@ -158,9 +146,6 @@ function drawChart(startDate, endDate, results) {
     thisChartDiv.setAttribute("class", "chart");
     thisChartDiv.setAttribute("style", "width: 100%; height: 200px;");
 
-    //console.log(thisChartDiv);
-    //console.log(thisChartDivTitle);
-
     document.getElementById("chart_div").appendChild(thisChartDivTitle);
     document.getElementById("chart_div").appendChild(thisChartDiv);
 
@@ -170,7 +155,6 @@ function drawChart(startDate, endDate, results) {
     if (results.tasks.length == 0) {
         hideWait();
         document.getElementById("table_div").innerHTML = "";
-        //document.getElementById("chart_div").innerHTML = "You do not have any tasks in this iteration";
         thisChartDiv.innerHTML = "You do not have any tasks in this iteration";
         return;
     }
@@ -182,7 +166,6 @@ function drawChart(startDate, endDate, results) {
         show_legend: false,
         show_titlebar: false,
         allow_zoom: false,
-        //itle: results.tasks[0].Owner._refObjectName,
         axis_bottom: {
             caption: "Date",
             grid: {show: false},
@@ -333,13 +316,11 @@ function drawChart(startDate, endDate, results) {
     hideWait();
 }
 
-
 function convertIsoDate(isoDate) {
     var jsDate = RALLY.Mashup.Utilities.convertIsoToJSDate(isoDate);
     jsDate.setMinutes(jsDate.getMinutes() - jsDate.getTimezoneOffset());
     return jsDate;
 }
-
 
 function formatDate(date) {
     var day = date.getDate();
@@ -354,30 +335,21 @@ function formatDate(date) {
     return month + "/" + day + "/" + year;
 }
 
-
 function runMainQuery() {
-    //console.log("running main query");
-    //console.log("__USER_NAME__");
-    //var teamMemberQuery = getTeamMembers("/Project/25758763437/TeamMembers");
     var q = "/Project/" + _PROJ_ID + "/TeamMembers";
     var teamMemberQuery = getTeamMembers(q);
     var teamMembers;
     $('#chart_div').empty();
     teamMemberQuery.success(function (data) {
         teamMembers = data.QueryResult.Results;
-        //console.log(teamMembers);
         continueMainQuery(teamMembers);
     });
 }
 
-
 function continueMainQuery(t){
-    //console.log("continuing main query");
     showWait("<em>Loading chart...</em>");
-    //console.log(t);
     var taskQuery;
     for (i = 0; i < t.length ; i++) {
-        //console.log(t[i].UserName);
         taskQuery = {
             key: "tasks",
             type: "Task",
@@ -385,15 +357,11 @@ function continueMainQuery(t){
             order: "Rank",
             query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND (Owner = \"" + t[i].UserName + "\"))"
         };
-        //console.log(taskQuery);
         batchToolkit.findAll(taskQuery, draw);
     }
-    //batchToolkit.findAll(taskQuery, draw);
 }
 
-
 function initPage() {
-    //console.log("initPage");
     RALLY.Mashup.Utilities.showPrintButton();
     widgetMode = RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "widget" || RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "panel";
     var chartWidth = Math.floor(getAvailableWidth() * 0.90) - 5;
@@ -412,18 +380,15 @@ function initPage() {
     document.getElementById("print_div").style.display = "block";
 }
 
-
 function showWait(message) {
     RALLY.Mashup.Utilities.showWait("spinner_div", ["chart_div", "table_div"]);
     var spinner = document.getElementById("spinner_div").innerHTML;
     document.getElementById("spinner_div").innerHTML = spinner + " " + message;
 }
 
-
 function hideWait() {
     RALLY.Mashup.Utilities.hideWait("spinner_div", ["chart_div", "table_div"]);
 }
-
 
 function getAvailableWidth() {
     var browserWidth = document.body.clientWidth || window.innerWidth;
@@ -434,7 +399,6 @@ function getAvailableWidth() {
     }
 }
 
-
 function getTeamMembers(call) {
     var url = "https://rally1.rallydev.com/slm/webservice/v2.0"+call;
 
@@ -443,64 +407,20 @@ function getTeamMembers(call) {
         xhrFields: {withCredentials: true}
     });
 }
-
-
 </script>
 
+
+
 <style type="text/css">
-    body {
-        background: white;
-    }
-    .lbl {
-        text-align: left;
-        white-space: nowrap;
-        font-size: 13px;
-    }
-    td {
-        font-size: 11px;
-    }
-    .tableRow {
-        background: white;
-        border-bottom: 1px solid #dddddd;
-        border-top: 0px;
-    }
-    .tableCell {
-        border-bottom: 1px solid #dddddd;
-        border-top: 0px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .headerRow {
-        color: #076692;
-        background: #eeeeee;
-    }
-    .headerCell {
-        border-left: 1px solid #ffffff;
-        text-align: left;
-        border-top: 0px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .state {
-        text-align: center;
-        width: 14px;
-        color: #ffffff;
-        background-color: #006600;
-    }
-    .blocked {
-        text-align: center;
-        width: 16px;
-        color: #ffffff;
-        background-color: transparent;
-        background-image: url(../images/icon_blocked.gif);
-        background-attachment: scroll;
-        background-repeat: no-repeat;
-        background-position: center center;
-    }
+    body {background: white; }
+    .lbl {text-align: left; white-space: nowrap; font-size: 13px; }
+    td {font-size: 11px; }
+    .tableRow {background: white; border-bottom: 1px solid #dddddd; border-top: 0px; }
+    .tableCell {border-bottom: 1px solid #dddddd; border-top: 0px; padding-left: 5px; padding-right: 5px; padding-top: 4px; padding-bottom: 4px; }
+    .headerRow {color: #076692; background: #eeeeee; }
+    .headerCell {border-left: 1px solid #ffffff; text-align: left; border-top: 0px; padding-left: 5px; padding-right: 5px; padding-top: 4px; padding-bottom: 4px; }
+    .state {text-align: center; width: 14px; color: #ffffff; background-color: #006600; }
+    .blocked {text-align: center; width: 16px; color: #ffffff; background-color: transparent; background-image: url(../images/icon_blocked.gif); background-attachment: scroll; background-repeat: no-repeat; background-position: center center; }
 </style>
 </head>
 <body>
@@ -513,7 +433,6 @@ function getTeamMembers(call) {
                 <img id="do" onmouseover="RALLY.Mashup.Utilities.showcbButton();"
                      onmouseout="hidecbMenu('buttons',event);" style="vertical-align: middle;"
                      src="https://rally1.rallydev.com/slm/images/menu_actions.gif"/>
-
                 <div style="position:relative;top:5px" align="left">
                     <div id="buttons" class="do-menu" style="left:0px;"
                          onmouseover="document.body.style.cursor='pointer';"
@@ -539,13 +458,11 @@ function getTeamMembers(call) {
                 </tr>
             </table>
             <br/>
-
             <div id="spinner_div" style="clear: both;"></div>
             <div id="chart_div" class="chart"></div>
         </td>
         <td style="vertical-align: top; width: 100%">
             <br/>
-
             <div id="table_div" style="margin-left: 20px;"></div>
         </td>
     </tr>
