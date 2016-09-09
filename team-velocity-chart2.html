@@ -29,8 +29,8 @@ Team Velocities Psuedo Code
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>UI Team Burndown</title>
-<meta name="Name" content="App: Digital UX Team Burndown"/>
+<title>UI Team Velocity</title>
+<meta name="Name" content="App: UI Team Velocity"/>
 <meta name="Version" content="1.0"/>
 <meta name="Vendor" content="Brian Hicks"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
@@ -54,6 +54,8 @@ dojo.addOnLoad(initPage);
 
 //var _PROJ_ID = "25758763437"; //Digital UX
 var _PROJ_ID = "60242551414"; //UI Dev
+var digitalUX = "25758763437"; //Digital UX
+var webAndMobile = "16732622451"; //Web & Mobile
 
 var WORK_WEEKENDS = false;
 var iterationDropdown;
@@ -63,6 +65,7 @@ var ONE_DAY = 1000 * 60 * 60 * 24;
 var DEBUG = false;
 var _TODAY = null;
 
+var PREV_ITERATIONS;
 var ITERATION_DATA1;
 var ITERATION_DATA2;
 var ITERATIONS_PROCESSED;
@@ -70,8 +73,8 @@ var ITERATIONS_WORKED;
 
 var TEAM_MEMBERS;
 var CURRENT_TEAM_MEMBER = 0;
-var TEAM_NOT_ACCEPTED = [];
-var TEAM_ACCEPTED = [];
+var TEAM_TOTAL1 = [];
+var TEAM_TOTAL2 = [];
 
 //var numTeamMemebers;
 
@@ -101,8 +104,34 @@ function initPage() {
     document.getElementById("title_div").style.display = "block";
     document.getElementById("print_div").style.display = "block";
     
-    $(".start").on("click", function(){runTeamMemberQuery(); });
-    $(".stop").on("click", function(){ stop(); });
+    var prev_query = {
+        key: "prev_iterations",
+        type: "iteration",
+        order: "EndDate desc",
+        fetch: "EndDate,StartDate,State,ObjectID,Name,Project,PlanEstimate,PlannedVelocity,TaskActualTotal,TaskEstimateTotal,TaskRemainingTotal",
+        query: "( ( EndDate <= " + _TODAY + " ) AND (Project.ObjectID = \"" + webAndMobile + "\") )"
+    };
+    batchToolkit.find(prev_query, function(results){
+        if (results.errors.length == 0 ){
+            //console.log(results);
+            PREV_ITERATIONS = results.prev_iterations;
+            //console.log(PREV_ITERATIONS);
+            for ( var i = 9; i >= 0; i--){
+                TEAM_TOTAL1.push([ PREV_ITERATIONS[i].Name, 0]);
+                TEAM_TOTAL2.push([ PREV_ITERATIONS[i].Name, 0]);
+            }
+            // console.log(TEAM_TOTAL1);
+            // console.log(TEAM_TOTAL2);
+            runTeamMemberQuery();
+        }
+        else{
+            console.log("Something went wrong");
+            console.log(results.errors);
+        }
+    });
+
+    // $(".start").on("click", function(){runTeamMemberQuery(); });
+    // $(".stop").on("click", function(){ stop(); });
 }
 
 function runTeamMemberQuery() {
@@ -110,6 +139,7 @@ function runTeamMemberQuery() {
     $( "#progressbar" ).progressbar({value: 1, max: 100 });
     //var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
     //var teamMemberQuery = getData("/Project/60242551414/TeamMembers");
+    
     var q = "/Project/" + _PROJ_ID + "/TeamMembers";
     var teamMemberQuery = getData(q);
 
@@ -124,7 +154,7 @@ function runSelect(){
     //console.log("buildiing select");
     //var select = $("select#teamList");
     //for (i = 0; i < t.length; i++){
-        console.log(TEAM_MEMBERS[CURRENT_TEAM_MEMBER].UserName);
+        //console.log(TEAM_MEMBERS[CURRENT_TEAM_MEMBER].UserName);
         runIterationQuery(TEAM_MEMBERS[CURRENT_TEAM_MEMBER].UserName);
     //}
     //$("select#teamList").on("change", function(){
@@ -134,8 +164,6 @@ function runSelect(){
 
 function runIterationQuery(a){
     //console.log("running iteration query");
-    var digitalUX = "16732622451"; //Digital UX
-    var webAndMobile = "25758763437"; //Web & Mobile
 
     //reset
     ITERATION_DATA1 = [];
@@ -143,37 +171,13 @@ function runIterationQuery(a){
     ITERATIONS_PROCESSED = 0;
     ITERATIONS_WORKED = 10;
 
-    var prev_query = {
-        key: "prev_iterations",
-        type: "iteration",
-        order: "EndDate desc",
-        fetch: "EndDate,StartDate,State,ObjectID,Name,Project,PlanEstimate,PlannedVelocity,TaskActualTotal,TaskEstimateTotal,TaskRemainingTotal",
-        query: "( ( EndDate <= " + _TODAY + " ) AND (Project.ObjectID = \"" + digitalUX + "\") )"
-    };
-    batchToolkit.find(prev_query, function(results){
-        if (results.errors.length == 0 ){
-            //console.log(results);
-
-            //setup team arrays
-            // for (n = 0; n < 10 ; n++) {
-            //     TEAM_NOT_ACCEPTED.push([results.prev_iterations[n].Name,0]);
-            //     TEAM_ACCEPTED.push([results.prev_iterations[n].Name,0]);
-            // }
-            // console.log(TEAM_NOT_ACCEPTED);
-            // console.log(TEAM_ACCEPTED);
-            runIndQuery(results.prev_iterations, a);
-        }
-        else{
-            console.log("Something went wrong");
-            console.log(results.errors);
-        }
-    });
+    runIndQuery(PREV_ITERATIONS, a);    
 }
 
 function runIndQuery(i, a){
     //console.log("running individual query");
-    var percent = (((CURRENT_TEAM_MEMBER + 1 )/TEAM_MEMBERS.length)*100).toFixed(0);
-    $( "#progressbar" ).progressbar( "value", Number(percent) );
+    // var percent = (((CURRENT_TEAM_MEMBER + 1 )/TEAM_MEMBERS.length)*100).toFixed(0);
+    // $( "#progressbar" ).progressbar( "value", Number(percent) );
     showWait("<em>Loading... "+a+"</em>");
 
     for (n = 0; n < 10 ; n++) {
@@ -357,17 +361,17 @@ function processStoryPoints(t){
 }
 
 function areWeDone(){
-    console.log("areWeDone?");
-    console.log(ITERATIONS_PROCESSED);
-    console.log(ITERATIONS_WORKED);
+    // console.log("areWeDone?");
+    // console.log(ITERATIONS_PROCESSED);
+    // console.log(ITERATIONS_WORKED);
     //we done with all iterations woked - sort then process
     if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
-        console.log("we're done");
+        //console.log("we're done with this team member");
         //console.log(ITERATIONS_PROCESSED);
 
         CURRENT_TEAM_MEMBER++;
-        console.log(CURRENT_TEAM_MEMBER);
-        console.log(TEAM_MEMBERS.length);
+        // console.log(CURRENT_TEAM_MEMBER);
+        // console.log(TEAM_MEMBERS.length);
 
         ITERATION_DATA1.sort(function(x, y) {
             return x[0].localeCompare(y[0]);
@@ -377,23 +381,12 @@ function areWeDone(){
             return x[0].localeCompare(y[0]);
         });
 
-        console.log(ITERATION_DATA1, ITERATION_DATA2);
-        // $.each(ITERATION_DATA1, function (index){
-        //     TEAM_NOT_ACCEPTED[index][1] += ITERATION_DATA1[index][1];
-        // });
-        // $.each(ITERATION_DATA2, function (index){
-        //     TEAM_ACCEPTED[index][1] += ITERATION_DATA2[index][1];
-        // });
-
-        TEAM_NOT_ACCEPTED.push(ITERATION_DATA1);
-        TEAM_ACCEPTED.push(ITERATION_DATA2);
-
+        sum();
+        
         if (CURRENT_TEAM_MEMBER == TEAM_MEMBERS.length ){
-            console.log("we're done processing team member");
-            
-            //console.log(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
-            //draw(TEAM_NOT_ACCEPTED, TEAM_ACCEPTED);
-            //draw(ITERATION_DATA1, ITERATION_DATA2);
+            // console.log("we're done processing team members");
+            // console.log(TEAM_TOTAL1, TEAM_TOTAL2);
+            draw(TEAM_TOTAL1, TEAM_TOTAL2);
         }
         else
             runSelect();
@@ -401,10 +394,29 @@ function areWeDone(){
         
     }
 }
-function stop(){
-    //break;
+function sum(){
+    //console.log(ITERATION_DATA1, ITERATION_DATA2);
+    //for each iteration
+    //  find the value in iteration data 1
+    //  add it to total array at this index
+    //  find the value in iteration data 2
+    //  add it to total array 2 at this index
+    
+    for ( var i = 0; i < 10; i++){
+        var this1 = ITERATION_DATA1.find( function(element, index, array){
+            return element[0] === TEAM_TOTAL1[i][0];
+        });
+        var this2 = ITERATION_DATA2.find( function(element, index, array){
+            return element[0] === TEAM_TOTAL2[i][0];
+        });
+        //console.log(this1);
+        //console.log(this2);
+        if (this1)
+            TEAM_TOTAL1[i][1] += this1[1];
+        if (this2)
+            TEAM_TOTAL2[i][1] += this2[1];
+    }
 }
-
 
 
 
@@ -590,6 +602,7 @@ function draw(total, accepted) {
     sbSeries.addSeries(series1);
 
     hideWait();
+    //$("#progressbar").hide();
 }
 
 
@@ -706,9 +719,9 @@ function draw(total, accepted) {
             <td style="vertical-align: top;">
                 <table>
                     <tr>
-                        <td id="timeboxLabel" class="lbl"><button class="start">Start</button></td> 
+                        <!-- <td id="timeboxLabel" class="lbl"><button class="start">Start</button></td>  -->
                         <!-- <td id="timeboxLabel" class="lbl"><button class="stop">Stop</button></td> --> 
-                        <td width="100px"><div id="progressbar"><span></div>
+                        <!-- <td width="100px"><div id="progressbar"><span></div> -->
                         <!-- <td><select id="timeboxList"></select></td> -->
                         <!-- <td><select id="teamList"><option val="">Select</option></select></td> -->
                         <td nowrap>
