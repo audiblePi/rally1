@@ -21,9 +21,11 @@
 google.load("visualization", "1", {packages:["table"]});
 dojo.addOnLoad(initPage);
 
-//var _PROJ_ID = "25758763437"; //Digital UX
-var _PROJ_ID = "60242551414"; //UI Dev
+var webAndMobile = "16732622451";
+var digitalUX = "25758763437";
+var uiDev = "60242551414";
 
+var _PROJ_ID = uiDev;
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
@@ -36,13 +38,7 @@ var numTeamMemebers;
 var _MAXHOURS;
 var _MAXPOINTS;
 
-
-
-
 function draw(results, storyArray) {
-    //console.log('drawing results');
-    //console.log(results);
-    //console.log(results.tasks[0].Owner._refObjectName);
     var startDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedStart());
     startDate.setHours(23);
     startDate.setMinutes(59);
@@ -57,7 +53,6 @@ function draw(results, storyArray) {
     }
     drawChart(startDate, endDate, results, storyArray);
 }
-
 
 function by(property) {
     return function(o, p) {
@@ -78,10 +73,6 @@ function by(property) {
 
 
 function drawChart(startDate, endDate, results, storyArray) {
-    //console.log("drawing chart");
-    // console.log(results);
-    // console.log(storyArray);
-    
     var randomNum = Math.floor((Math.random() * 100) + 1);
     var thisDivId = "this-div-" + randomNum.toString();
     var thisChartDiv = document.createElement("DIV");
@@ -118,7 +109,6 @@ function drawChart(startDate, endDate, results, storyArray) {
         show_legend: false,
         show_titlebar: false,
         allow_zoom: false,
-        //title: "Digital UX Team Burndown",
         axis_bottom: {
             caption: "Date",
             grid: {show:false},
@@ -290,7 +280,6 @@ function drawChart(startDate, endDate, results, storyArray) {
     var s = 0;
     var t = 0; 
     date = new Date(startDate.getTime());
-    //cutoff = new Date(endDate.getTime());
     while (date <= cutoff) {
         var roundedDate = new Date(date.getTime());
         roundedDate.setHours(15);
@@ -318,8 +307,6 @@ function drawChart(startDate, endDate, results, storyArray) {
     todoArray.splice(8, 2);
     var newTodoArray = [];
 
-    //newTodoArray.push([dayBefore, totalEstimate]);
-
     for (var i = 0; i < todoArray.length; i++) {
         var newdate = reFormatDate(todoArray[i][0]);
         var temp = [
@@ -328,8 +315,6 @@ function drawChart(startDate, endDate, results, storyArray) {
         ];
         newTodoArray.push(temp);
     }
-    // console.log("newTodoArray");
-     console.log(newTodoArray);
     burndownChart.addSeries(new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(newTodoArray),
         {
@@ -353,8 +338,6 @@ function drawChart(startDate, endDate, results, storyArray) {
     acceptedPointsArray.splice(8, 2);
     var newAcceptedArray = [];
 
-    //newAcceptedArray.push([dayBefore, 0, 0]);
-
     for (var i = 0; i < acceptedPointsArray.length; i++) {
         var newdate = reFormatDate(acceptedPointsArray[i][0]);
         var temp = [
@@ -364,8 +347,7 @@ function drawChart(startDate, endDate, results, storyArray) {
         ];
         newAcceptedArray.push(temp);
     }
-    // console.log("newAcceptedArray");
-    //console.log(newAcceptedArray);
+
     burndownChart.addSeries(new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(newAcceptedArray),
         {
@@ -401,8 +383,6 @@ function drawChart(startDate, endDate, results, storyArray) {
     var t;
     var newdate2;
 
-    //idealArray.push([dayBefore, totalEstimate]);
-
     for (t = 0; t < 14; t++) {
         if ( (t > 2 && t < 5) || (t > 9 && t < 12) ){
             continue;
@@ -417,8 +397,7 @@ function drawChart(startDate, endDate, results, storyArray) {
             j++;
         }
     }
-    // console.log("idealArray");
-    // console.log(idealArray);
+
     burndownChart.addSeries(new EJSC.LineSeries(
         new EJSC.ArrayDataHandler(idealArray),
         {
@@ -437,11 +416,6 @@ function drawChart(startDate, endDate, results, storyArray) {
     hideWait();
 }
 
-
-
-
-
-
 function convertIsoDate(isoDate) {
     var jsDate = RALLY.Mashup.Utilities.convertIsoToJSDate(isoDate);
     jsDate.setMinutes(jsDate.getMinutes() - jsDate.getTimezoneOffset());
@@ -456,7 +430,6 @@ function reFormatDate(date){
     return newdate;
 }
 
-
 function formatDate(date) {
     var day = date.getDate();
     if (day < 10) {
@@ -470,38 +443,28 @@ function formatDate(date) {
     return month + "/" + day + "/" + year;
 }
 
-
 function runMainQuery() {
-    //console.log("running main query");
     var q = "/Project/" + _PROJ_ID + "/TeamMembers";
     var teamMemberQuery = getData(q);
     var teamMembers;
     teamMemberQuery.success(function (data) {
         teamMembers = data.QueryResult.Results;
-        //console.log(teamMembers);
         continueMainQuery(teamMembers);
     });
 }
 
-
 function continueMainQuery(t){
-    //console.log("continuing main query");
     showWait("<em>Loading chart...</em>");
     runTeamQuery(t);
 }
 
-
 function runTeamQuery(a){
-    //console.log("running team query");
     showWait("<em>Loading chart...</em>");
-    //console.log(a);
     tasksProcessed = 0;
     teamTasks = [];
 
-    //console.log(a.length);
     numTeamMemebers = a.length;
     for (i = 0; i < a.length ; i++) {
-        //console.log(a[i].UserName);
         var taskQuery = {
             key: "tasks",
             type: "Task",
@@ -509,7 +472,6 @@ function runTeamQuery(a){
             order: "Rank",
             query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND (Owner = \"" + a[i].UserName + "\"))"
         };
-        //console.log(taskQuery);
         batchToolkit.findAll(taskQuery, processResults);
     }
 }
@@ -518,7 +480,6 @@ function processResults(results){
     for (i = 0; i < results.tasks.length ; i++)
         teamTasks.push(results.tasks[i]);
     tasksProcessed++;
-
 
     if ( tasksProcessed == numTeamMemebers){
         processStoryPoints(teamTasks);
@@ -549,7 +510,6 @@ function processStoryPoints(t){
             }
 
             if (data.HierarchicalRequirement != undefined){
-
                 var temp = {
                     formattedID : data.HierarchicalRequirement.FormattedID,
                     planEstimate : data.HierarchicalRequirement.PlanEstimate,
@@ -579,9 +539,7 @@ function processStoryPoints(t){
                     $('#totalHours').html('<strong>Total Hours:</strong> ' + totalHours);
                     $('#maxPoints').html('<strong>Total Points:</strong> ' + maxPoints);
                     
-                    //convertHours(pointsToHours, teamStoryData);
                     draw(t, teamStoryData);
-
                 }
             }
         });
@@ -608,13 +566,9 @@ function processStoryPoints(t){
             a[i].planEstimate *= ratio;
         }
     }
-
-
 }
 
-
 function initPage() {
-    //console.log("initPage");
     RALLY.Mashup.Utilities.showPrintButton();
     widgetMode = RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "widget" || RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "panel";
     var chartWidth = Math.floor(getAvailableWidth() * 0.90) - 5;
@@ -633,18 +587,15 @@ function initPage() {
     document.getElementById("print_div").style.display = "block";
 }
 
-
 function showWait(message) {
     RALLY.Mashup.Utilities.showWait("spinner_div", ["chart_div", "table_div", "myLegend"]);
     var spinner = document.getElementById("spinner_div").innerHTML;
     document.getElementById("spinner_div").innerHTML = spinner + " " + message;
 }
 
-
 function hideWait() {
     RALLY.Mashup.Utilities.hideWait("spinner_div", ["chart_div", "myLegend", "table_div"]);
 }
-
 
 function getAvailableWidth() {
     var browserWidth = document.body.clientWidth || window.innerWidth;
@@ -655,7 +606,6 @@ function getAvailableWidth() {
     }
 }
 
-
 function getData(call) {
     var url = "https://rally1.rallydev.com/slm/webservice/v2.0"+call;
     return $.ajax({
@@ -663,8 +613,6 @@ function getData(call) {
         xhrFields: {withCredentials: true}
     });
 }
-
-
 </script>
 
 
@@ -679,74 +627,18 @@ function getData(call) {
 
 
 <style type="text/css">
-    body {
-        background: white;
-    }
-    .lbl {
-        text-align: left;
-        white-space: nowrap;
-        font-size: 13px;
-    }
-    td {
-        font-size: 11px;
-    }
-    .tableRow {
-        background: white;
-        border-bottom: 1px solid #dddddd;
-        border-top: 0px;
-    }
-    .tableCell {
-        border-bottom: 1px solid #dddddd;
-        border-top: 0px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .headerRow {
-        color: #076692;
-        background: #eeeeee;
-    }
-    .headerCell {
-        border-left: 1px solid #ffffff;
-        text-align: left;
-        border-top: 0px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .state {
-        text-align: center;
-        width: 14px;
-        color: #ffffff;
-        background-color: #006600;
-    }
-    .blocked {
-        text-align: center;
-        width: 16px;
-        color: #ffffff;
-        background-color: transparent;
-        background-image: url(../images/icon_blocked.gif);
-        background-attachment: scroll;
-        background-repeat: no-repeat;
-        background-position: center center;
-    }
-    #myLegend{
-        position: absolute;
-        right: 25%;
-        top: 30%;
-        border: 1px solid;
-        padding: .5rem;
-        background: #fff;
-        visibility:hidden;
-    }
-    #totalHours{
-        margin-bottom:.5rem;
-    }
-    #chart_div{
-        width:100%!important;
-    }
+    body {background: white; }
+    .lbl {text-align: left; white-space: nowrap; font-size: 13px; }
+    td {font-size: 11px; }
+    .tableRow {background: white; border-bottom: 1px solid #dddddd; border-top: 0px; }
+    .tableCell {border-bottom: 1px solid #dddddd; border-top: 0px; padding-left: 5px; padding-right: 5px; padding-top: 4px; padding-bottom: 4px; }
+    .headerRow {color: #076692; background: #eeeeee; }
+    .headerCell {border-left: 1px solid #ffffff; text-align: left; border-top: 0px; padding-left: 5px; padding-right: 5px; padding-top: 4px; padding-bottom: 4px; }
+    .state {text-align: center; width: 14px; color: #ffffff; background-color: #006600; }
+    .blocked {text-align: center; width: 16px; color: #ffffff; background-color: transparent; background-image: url(../images/icon_blocked.gif); background-attachment: scroll; background-repeat: no-repeat; background-position: center center; }
+    #myLegend{position: absolute; right: 25%; top: 30%; border: 1px solid; padding: .5rem; background: #fff; visibility:hidden; }
+    #totalHours{margin-bottom:.5rem; }
+    #chart_div{width:100%!important; }
 </style>
 </head>
 <body>
@@ -784,19 +676,8 @@ function getData(call) {
                             <div id="dates_div" style="margin-left: 10px"></div>
                         </td>
                     </tr>
-                   <!--  <tr>
-                        <td colspan="3">
-                            <div id="totalHours"></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="3">
-                            <div id="maxPoints"></div>
-                        </td>
-                    </tr> -->
                 </table>
                 <br/>
-
                 <div id="spinner_div" style="clear: both;"></div>
                 <div id="chart_div" class="chart" style="width:100%; height: 200px;"></div>
             </td>

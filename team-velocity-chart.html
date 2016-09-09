@@ -1,36 +1,8 @@
-<!--Personal Velocities Psuedo Code
-===============================
--Get Team Members
--Get all iterations for digital ux
--Create Drop Down
--On Dropdown select
-    For each iteration (last ten <= to this iteration)
-        get all story points
-        get all accepted story points
-        get all accpeted story points after end of iteration
-        save to Iteration array
--Graph Iteration Array
-
-
-
-Team Velocities Psuedo Code
-===========================
--Get Team Members
--Get all iterations for digital ux
--For each iteration (last ten <= to this iteration)
-    For each team member
-        total story points += get all story points
-        total accepted story points += get all accepted story points
-        total accepted after iteration += get all accpeted story points after end of iteration
-    save totals to Iteration array
--Graph Iteration Array-->
-
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>UI Team Velocities</title>
-<meta name="Name" content="App: UI Team Velocities"/>
+<title>UI Team Personal Velocities</title>
+<meta name="Name" content="App: UI Team Personal Velocities"/>
 <meta name="Version" content="1.0"/>
 <meta name="Vendor" content="Brian Hicks"/>
 <link rel="stylesheet" type="text/css" href="https://rally1.rallydev.com/slm/css/rally/core.css" charset="utf-8"/>
@@ -50,9 +22,11 @@ google.load("visualization", "1", {packages:["table"]});
 dojo.require("dojo.date.stamp");
 dojo.addOnLoad(initPage);
 
-//var _PROJ_ID = "25758763437"; //Digital UX
-var _PROJ_ID = "60242551414"; //UI Dev
+var webAndMobile = "16732622451";
+var digitalUX = "25758763437";
+var uiDev = "60242551414";
 
+var _PROJ_ID = uiDev;
 var WORK_WEEKENDS = false;
 var iterationDropdown;
 var batchToolkit;
@@ -66,20 +40,15 @@ var ITERATION_DATA2;
 var ITERATIONS_PROCESSED;
 var ITERATIONS_WORKED;
 
-//var numTeamMemebers;
-
 var _MAXHOURS;
 var _MAXPOINTS;
 
 
 
 
-/***********************************************************************************************************/
 
 function initPage() {
-    //console.log("initPage");
     _TODAY = dateToISOString(new Date());
-    //console.log(_TODAY);
     RALLY.Mashup.Utilities.showPrintButton();
     widgetMode = RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "widget" || RALLY.Mashup.Utilities.getDisplayMode("__MODE__") === "panel";
     batchToolkit = new RALLY.Mashup.BatchToolkit("__WORKSPACE_OID__", "__PROJECT_OID__",
@@ -97,21 +66,17 @@ function initPage() {
 }
 
 function runTeamMemberQuery() {
-    //console.log("running team member query");
     var q = "/Project/" + _PROJ_ID + "/TeamMembers";
     var teamMemberQuery = getData(q);
-
-    //var teamMemberQuery = getData("/Project/25758763437/TeamMembers");
     var teamMembers;
+    
     teamMemberQuery.success(function (data) {
         teamMembers = data.QueryResult.Results;
-        //console.log(teamMembers);
         buildSelect(teamMembers);
     });
 }
 
 function buildSelect(t){
-    //console.log("buildiing select");
     var select = $("select#teamList");
     for (i = 0; i < t.length; i++){
         select.append("<option value="+t[i].UserName+">"+t[i].FirstName+" "+t[i].LastName+"</option>");
@@ -122,10 +87,6 @@ function buildSelect(t){
 }
 
 function runIterationQuery(a){
-    //console.log("running iteration query");
-    var digitalUX = "16732622451"; //Digital UX
-    var webAndMobile = "25758763437"; //Web & Mobile
-
     //reset
     ITERATION_DATA1 = [];
     ITERATION_DATA2 = [];
@@ -137,11 +98,10 @@ function runIterationQuery(a){
         type: "iteration",
         order: "EndDate desc",
         fetch: "EndDate,StartDate,State,ObjectID,Name,Project,PlanEstimate,PlannedVelocity,TaskActualTotal,TaskEstimateTotal,TaskRemainingTotal",
-        query: "( ( EndDate <= " + _TODAY + " ) AND (Project.ObjectID = \"" + digitalUX + "\") )"
+        query: "( ( EndDate <= " + _TODAY + " ) AND (Project.ObjectID = \"" + webAndMobile + "\") )"
     };
     batchToolkit.find(prev_query, function(results){
         if (results.errors.length == 0 ){
-            //console.log(results);
             runIndQuery(results.prev_iterations, a);
         }
         else{
@@ -152,11 +112,9 @@ function runIterationQuery(a){
 }
 
 function runIndQuery(i, a){
-    //console.log("running individual query");
     showWait("<em>Loading chart...</em>");
 
     for (n = 0; n < 10 ; n++) {
-        //console.log( i[n].Name );
         var taskQuery = {
              key: "tasks",
              type: "Task",
@@ -169,9 +127,6 @@ function runIndQuery(i, a){
 }
 
 function processResults(results){
-    //console.log("processing interation tasks");
-    //console.log(results);
-    
     var thisIterationTasks = [];
 
     for (i = 0; i < results.tasks.length; i++)
@@ -180,26 +135,17 @@ function processResults(results){
     if ( thisIterationTasks.length == 0 )
          ITERATIONS_WORKED--;
 
-    //console.log("thisIterationTasks");
-    //console.log(thisIterationTasks.length);
     if (thisIterationTasks.length > 0 )
         processStoryPoints(thisIterationTasks);
 }
 
 function processStoryPoints(t){
-    // console.log("processing iteration story points");
-    // console.log("this iterations tasks");
-    // console.log(t);
-
     var stories = [];
     var storyData = [];
     var storiesProcessed = 0;
     var count = 0;
     var errors = 0;
     var maxPoints = 0;
-
-    // if ( t.length == 0 )
-    //     ITERATIONS_WORKED--;
 
     for (i = 0; i < t.length ; i++){
         //only need unique story id's
@@ -208,18 +154,13 @@ function processStoryPoints(t){
         }
     }
 
-    //console.log("stories");
-    //console.log(stories);
-
     for (i = 0; i < stories.length ; i++){
         var storyDataUrl = getData("/hierarchicalrequirement/" + stories[i]);
         storyDataUrl.success(function (data, textStatus, jqXHR) {
             if (data.HierarchicalRequirement == undefined){
                 errors++;
             }
-            // console.log("processing this iterations stories");
-            // console.log(data.HierarchicalRequirement);
-
+            
             //processing stories
             if (data.HierarchicalRequirement != undefined){
                 var temp = {
@@ -230,76 +171,30 @@ function processStoryPoints(t){
                     iteration: data.HierarchicalRequirement.Iteration._refObjectName
                 }
                 maxPoints += data.HierarchicalRequirement.PlanEstimate;
-                //_MAXHOURS = maxPoints;
                 storiesProcessed++;
-
-                //only keep stories that have been accepted
-                //if (data.HierarchicalRequirement.AcceptedDate != null)
-                     storyData.push(temp);
+                storyData.push(temp);
             }
-
-            // console.log("stories.length");
-            // console.log(stories.length);
-            // console.log("errors");
-            // console.log(errors);
-            // console.log("storiesProcessed");
-            // console.log(storiesProcessed);
 
             //we're done with this iteration - sort then process
             if ( ((stories.length-errors) === storiesProcessed) && (storyData.length > 0) ){
-                // console.log("we're done with this iterations stories");
-                // console.log("storyData");
-                // console.log(storyData);
-                // storyData.sort(function(x, y) {
-                //     return convertIsoDate(x.acceptedDate) - convertIsoDate(y.acceptedDate);
-                // });
-
                 var acceptedPoints = countAcceptedPoints(storyData);
-                // console.log("acceptedPoints");
-                // console.log(acceptedPoints);
-
                 var totalPoints = countStoryPoints(storyData);
-                // console.log("totalPoints");
-                // console.log(totalPoints);
-
                 var totalHours = countTaskHours(t);
-                // console.log("totalHours");
-                // console.log(totalHours);
-
                 var thisIteration = storyData[0].iteration;
-                // console.log("thisIteration");
-                // console.log(totalHours);                
-                //var pointsToHours = (totalHours/maxPoints).toFixed(2);
-
-                //_MAXPOINTS = totalHours;
-    
+                
                 ITERATION_DATA1.push([ thisIteration, totalPoints - acceptedPoints]);
                 ITERATION_DATA2.push([ thisIteration, acceptedPoints]);
                 ITERATIONS_PROCESSED++
             }
-            // else if (storyData == 0){
-            //     ITERATIONS_PROCESSED++
-            // }
-
-            // console.log("storiesProcessed");
-            // console.log(storiesProcessed);
-            // console.log("ITERATIONS_PROCESSED");
-            // console.log(ITERATIONS_PROCESSED);
-            // console.log("ITERATIONS_WORKED");
-            // console.log(ITERATIONS_WORKED);
 
             //we done with all iterations woked - sort then process
             if ( ITERATIONS_PROCESSED === ITERATIONS_WORKED ){
-                // console.log("we're done");
-                // console.log(ITERATIONS_PROCESSED);
-
                 ITERATION_DATA1.sort(function(x, y) {
                     return x[0].localeCompare(y[0]);
                 });
                 ITERATION_DATA2.sort(function(x, y) {
                     return x[0].localeCompare(y[0]);
                 });
-                //console.log(ITERATION_DATA1, ITERATION_DATA2);
                 draw(ITERATION_DATA1, ITERATION_DATA2);
             }
             
@@ -350,7 +245,7 @@ function processStoryPoints(t){
 
 
 
-/***********************************************************************************************************/
+
 /*HELPERS*/
 function showWait(message) {
     RALLY.Mashup.Utilities.showWait("spinner_div", ["chart_div"]);
@@ -397,7 +292,6 @@ function dateToISOString(date) {
 }
 function getData(call) {
     var url = "https://rally1.rallydev.com/slm/webservice/v2.0"+call;
-    //console.log(url);
     return $.ajax({
         url: url,
         xhrFields: {withCredentials: true}
@@ -442,19 +336,14 @@ function by(property) {
 
 
 
-/***********************************************************************************************************/
+
 /*CHART*/
 function draw(total, accepted) {
-    //console.log("drawing chart");
-    //console.log(results);
-
     var thisChartDiv = document.createElement("DIV");
     var chartWidth = Math.floor(getAvailableWidth() * 0.90) - 5;
       
-   //thisChartDiv.setAttribute("id", thisDivId);
     thisChartDiv.setAttribute("class", "chart");
     thisChartDiv.setAttribute("style", "width: 90%; height: 400px; margin:auto;");
-
     $("#chart_div").empty();
     document.getElementById("chart_div").appendChild(thisChartDiv);
 
@@ -474,8 +363,7 @@ function draw(total, accepted) {
             min_extreme:0.0,
             caption: "Plan Estimates",
             major_ticks: {
-               show: true,
-               //max_interval: intervalHours            
+               show: true
             },
             formatter: new EJSC.NumberFormatter({variable_decimals: 0 }),
             visible: true
@@ -484,9 +372,9 @@ function draw(total, accepted) {
 
     velocityChart.onShowHint = function(point, series, chart, hint, hoverOrSelect) {
         if (series.title.indexOf('Not Accepted') >= 0)
-            return 'Not Accepted: ' + Math.round(point.y * 100) / 100 + ' hours';
+            return 'Not Accepted: ' + Math.round(point.y * 100) / 100 + ' points';
         else if (series.title.indexOf('Accepted') >= 0)
-            return 'Accepted: ' + Math.round(point.y * 100) / 100 + ' hours';
+            return 'Accepted: ' + Math.round(point.y * 100) / 100 + ' points';
     };
 
     var sbSeries = velocityChart.addSeries(
@@ -498,36 +386,34 @@ function draw(total, accepted) {
                 intervalOffset: 0.7,
                 groupedBars: false
             }
-    ));
+        )
+    );
 
     var series1 = new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(total), 
         {
-            // autosort: false, 
             groupedBars:false,
             title: "Not Accepted",
             color: "#AAA",
             opacity: 100,
             lineWidth: 1,
             opacity: 1
-        });
+        }
+    );
     var series2 = new EJSC.BarSeries(
         new EJSC.ArrayDataHandler(accepted), 
         {
-            // autosort: false, 
             groupedBars:false,
             title: "Accepted",
             color: "#3A874F",
             opacity: 100,
             lineWidth: 1
-        });
+        }
+    );
     sbSeries.addSeries(series2);
     sbSeries.addSeries(series1);
-
     hideWait();
 }
-
-
 </script>
 
 
@@ -542,78 +428,22 @@ function draw(total, accepted) {
 
 
 <style type="text/css">
-    body {
-        background: white;
-    }
-    .lbl {
-        text-align: left;
-        white-space: nowrap;
-        font-size: 13px;
-    }
-    td {
-        font-size: 11px;
-    }
-    .tableRow {
-        background: white;
-        border-bottom: 1px solid #dddddd;
-        border-top: 0px;
-    }
-    .tableCell {
-        border-bottom: 1px solid #dddddd;
-        border-top: 0px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .headerRow {
-        color: #076692;
-        background: #eeeeee;
-    }
-    .headerCell {
-        border-left: 1px solid #ffffff;
-        text-align: left;
-        border-top: 0px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .state {
-        text-align: center;
-        width: 14px;
-        color: #ffffff;
-        background-color: #006600;
-    }
-    .blocked {
-        text-align: center;
-        width: 16px;
-        color: #ffffff;
-        background-color: transparent;
-        background-image: url(../images/icon_blocked.gif);
-        background-attachment: scroll;
-        background-repeat: no-repeat;
-        background-position: center center;
-    }
-    #myLegend{
-        position: absolute;
-        right: 25%;
-        top: 30%;
-        border: 1px solid;
-        padding: .5rem;
-        background: #fff;
-        visibility:hidden;
-    }
-    #totalHours{
-        margin-bottom:.5rem;
-    }
-    #chart_div{
-        width:100%!important;
-    }
+    body {background: white; }
+    .lbl {text-align: left; white-space: nowrap; font-size: 13px; }
+    td {font-size: 11px; }
+    .tableRow {background: white; border-bottom: 1px solid #dddddd; border-top: 0px; }
+    .tableCell {border-bottom: 1px solid #dddddd; border-top: 0px; padding-left: 5px; padding-right: 5px; padding-top: 4px; padding-bottom: 4px; }
+    .headerRow {color: #076692; background: #eeeeee; }
+    .headerCell {border-left: 1px solid #ffffff; text-align: left; border-top: 0px; padding-left: 5px; padding-right: 5px; padding-top: 4px; padding-bottom: 4px; }
+    .state {text-align: center; width: 14px; color: #ffffff; background-color: #006600; }
+    .blocked {text-align: center; width: 16px; color: #ffffff; background-color: transparent; background-image: url(../images/icon_blocked.gif); background-attachment: scroll; background-repeat: no-repeat; background-position: center center; }
+    #myLegend{position: absolute; right: 25%; top: 30%; border: 1px solid; padding: .5rem; background: #fff; visibility:hidden; }
+    #totalHours{margin-bottom:.5rem; }
+    #chart_div{width:100%!important; }
 </style>
 </head>
 <body>
-<div class="titlebar" style="float: left; display: none;" id="title_div">UI Team Velocities</div>
+<div class="titlebar" style="float: left; display: none;" id="title_div">UI Team Personal Velocities</div>
 <div id="print_div" style="display: none;">
     <table>
         <tr>
@@ -642,34 +472,16 @@ function draw(total, accepted) {
                 <table>
                     <tr>
                         <td id="timeboxLabel" class="lbl">Team Members</td> 
-                        <!-- <td><select id="timeboxList"></select></td> -->
                         <td><select id="teamList"><option val="">Select</option></select></td>
-                        <td nowrap>
-                            <div id="dates_div" style="margin-left: 10px"></div>
-                        </td>
+                        <td nowrap> <div id="dates_div" style="margin-left: 10px"></div> </td>
+                    </tr>
                 </table>
                 <br/>
-
                 <div id="spinner_div" style="clear: both;"></div>
                 <div id="chart_div" class="chart" style="width:100%; height: 200px;"></div>
             </td>
         </tr>
     </table>
 </div>
-<!-- <div>
-    <div id="myLegend">
-        <div id="totalHours"></div>
-        <div id="maxPoints"></div>
-    </div>
-    <table width="100%">
-        <tr>
-            <td style="vertical-align: top; width: 100%">
-                <br/>
-
-                <div id="table_div" style="margin-left: 20px;"></div>
-            </td>
-        </tr>
-    </table>
-</div> -->
 </body>
 </html>
